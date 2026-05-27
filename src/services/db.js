@@ -4,6 +4,7 @@ class DatabaseService {
   constructor() {
     this.supabase = null;
     this.onAuthStateChangeCallback = null;
+    this.localCache = null;
     this.loadConfig();
   }
 
@@ -48,6 +49,7 @@ class DatabaseService {
       localStorage.removeItem('blip_supabase_url');
       localStorage.removeItem('blip_supabase_anon_key');
     }
+    this.localCache = null;
     this.loadConfig();
   }
 
@@ -94,6 +96,7 @@ class DatabaseService {
   }
 
   async logout() {
+    this.localCache = null;
     if (this.supabase) {
       await this.supabase.auth.signOut();
     }
@@ -140,17 +143,25 @@ class DatabaseService {
 
   // Get entries stored in localStorage
   getLocalEntries() {
+    if (this.localCache) {
+      return this.localCache;
+    }
     const raw = localStorage.getItem('blip_local_entries');
-    if (!raw) return [];
+    if (!raw) {
+      this.localCache = [];
+      return [];
+    }
     try {
       const parsed = JSON.parse(raw);
-      return parsed.map(item => ({
+      this.localCache = parsed.map(item => ({
         ...item,
         createdAt: new Date(item.createdAt),
         modifiedAt: new Date(item.modifiedAt)
       })).sort((a, b) => b.createdAt - a.createdAt);
+      return this.localCache;
     } catch (e) {
       console.error("Error parsing local entries:", e);
+      this.localCache = [];
       return [];
     }
   }
@@ -204,6 +215,7 @@ class DatabaseService {
     } else {
       entries.unshift(entry);
     }
+    this.localCache = entries;
     localStorage.setItem('blip_local_entries', JSON.stringify(entries));
   }
 
@@ -223,6 +235,7 @@ class DatabaseService {
     // Always delete locally as well
     const entries = this.getLocalEntries();
     const filtered = entries.filter(e => e.id !== id);
+    this.localCache = filtered;
     localStorage.setItem('blip_local_entries', JSON.stringify(filtered));
   }
 
@@ -274,6 +287,7 @@ class DatabaseService {
         }
         return e;
       });
+      this.localCache = updatedEntries;
       localStorage.setItem('blip_local_entries', JSON.stringify(updatedEntries));
       console.log("Offline sync complete!");
     } catch (err) {
@@ -283,14 +297,54 @@ class DatabaseService {
 
   // Import JSON entries
   async importJSON(entriesArray) {
+    const user = await this.getCurrentUser();
+    const newLocalEntries = [...this.getLocalEntries()];
+    const cloudPayloads = [];
+
     for (const item of entriesArray) {
-      await this.saveEntry({
+      const entry = {
         id: item.id || crypto.randomUUID(),
-        createdAt: item.createdAt || item.created_at || new Date(),
+        createdAt: item.createdAt || item.created_at ? new Date(item.createdAt || item.created_at) : new Date(),
+        modifiedAt: new Date(),
         text: item.text || '',
         mood: parseInt(item.mood) ?? 1,
         isFavorite: !!(item.isFavorite || item.is_favorite),
-      });
+        owner: user ? user.id : null
+      };
+
+      // Add to local cache list
+      const idx = newLocalEntries.findIndex(e => e.id === entry.id);
+      if (idx >= 0) {
+        newLocalEntries[idx] = entry;
+      } else {
+        newLocalEntries.unshift(entry);
+      }
+
+      if (this.supabase && user) {
+        cloudPayloads.push({
+          id: entry.id,
+          created_at: entry.createdAt.toISOString(),
+          modified_at: entry.modifiedAt.toISOString(),
+          text: entry.text,
+          mood: entry.mood,
+          is_favorite: entry.isFavorite,
+          owner: user.id
+        });
+      }
+    }
+
+    // Sort descending by date
+    newLocalEntries.sort((a, b) => b.createdAt - a.createdAt);
+    this.localCache = newLocalEntries;
+    localStorage.setItem('blip_local_entries', JSON.stringify(newLocalEntries));
+
+    // Upload to Supabase in a single batch query!
+    if (this.supabase && user && cloudPayloads.length > 0) {
+      const { error } = await this.supabase
+        .from('journal_entries')
+        .upsert(cloudPayloads);
+
+      if (error) throw error;
     }
   }
 }

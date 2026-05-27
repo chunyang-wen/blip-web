@@ -1,10 +1,46 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Heart, Star, Trash2, Edit2, Check, X, Calendar, MessageSquare } from 'lucide-react';
 
 export default function EntryList({ entries, onUpdate, onDelete, onToggleFavorite }) {
   const [editingId, setEditingId] = useState(null);
   const [editText, setEditText] = useState('');
   const [editMood, setEditMood] = useState(1);
+
+  // Pagination & Infinite Scroll State
+  const [visibleCount, setVisibleCount] = useState(15);
+  const observerRef = useRef(null);
+
+  // Reset pagination when entries change (e.g. interval, date, favorites)
+  useEffect(() => {
+    setVisibleCount(15);
+  }, [entries]);
+
+  // Infinite Scroll IntersectionObserver
+  useEffect(() => {
+    if (visibleCount >= entries.length) return;
+
+    const observer = new IntersectionObserver((observerEntries) => {
+      const target = observerEntries[0];
+      if (target.isIntersecting) {
+        setVisibleCount(prev => Math.min(prev + 15, entries.length));
+      }
+    }, {
+      root: null,
+      rootMargin: '180px', // Trigger slightly early for a seamless scroll
+      threshold: 0.1
+    });
+
+    const currentSentinel = observerRef.current;
+    if (currentSentinel) {
+      observer.observe(currentSentinel);
+    }
+
+    return () => {
+      if (currentSentinel) {
+        observer.unobserve(currentSentinel);
+      }
+    };
+  }, [entries.length, visibleCount]);
 
   const moods = {
     0: { icon: '❤️', label: 'Good', border: 'hsl(0, 100%, 68%)', bg: 'rgba(255, 107, 107, 0.04)' },
@@ -63,7 +99,7 @@ export default function EntryList({ entries, onUpdate, onDelete, onToggleFavorit
 
   return (
     <div style={styles.listContainer}>
-      {entries.map((entry) => {
+      {entries.slice(0, visibleCount).map((entry) => {
         const isEditing = editingId === entry.id;
         const moodInfo = moods[entry.mood] || moods[1];
 
@@ -190,6 +226,14 @@ export default function EntryList({ entries, onUpdate, onDelete, onToggleFavorit
           </article>
         );
       })}
+
+      {/* Infinite Scroll Sentinel / Loading Spinner */}
+      {visibleCount < entries.length && (
+        <div ref={observerRef} style={styles.loadingMore} className="glass">
+          <div style={styles.loadingSpinner} />
+          <span style={styles.loadingMoreText}>Recalling more thoughts...</span>
+        </div>
+      )}
     </div>
   );
 }
@@ -417,5 +461,34 @@ const styles = {
     ':hover': {
       backgroundColor: 'var(--accent-hover)',
     }
+  },
+  loadingMore: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: '12px',
+    padding: '20px',
+    borderRadius: '16px',
+    backgroundColor: 'var(--bg-card)',
+    border: '1px solid var(--border-color)',
+    marginTop: '8px',
+    boxShadow: 'var(--shadow-sm)',
+    animation: 'pulse 2s infinite ease-in-out',
+    transition: 'var(--transition-normal)',
+  },
+  loadingSpinner: {
+    width: '18px',
+    height: '18px',
+    borderRadius: '50%',
+    border: '2px solid var(--border-color)',
+    borderTopColor: 'var(--accent-color)',
+    animation: 'spin 0.8s linear infinite',
+  },
+  loadingMoreText: {
+    fontSize: '13px',
+    fontWeight: '600',
+    color: 'var(--text-muted)',
+    fontFamily: 'var(--font-title)',
+    letterSpacing: '0.02em',
   }
 };
