@@ -1,16 +1,40 @@
 import React, { useState, useEffect } from 'react';
 import { db } from '../services/db';
-import { Shield, Sparkles, AlertCircle, Eye, EyeOff, Loader2, ArrowRight, Server, Database, Key, HelpCircle, FileText, Check } from 'lucide-react';
+import { Shield, Sparkles, AlertCircle, Eye, EyeOff, Loader2, ArrowRight, HardDrive, Cloud, Key, Server, Database, HelpCircle, ArrowLeft, CheckCircle } from 'lucide-react';
 
 export default function Login({ onAuthSuccess, onBypassAuth }) {
+  // Onboarding Steps: 'choose' | 'setup' | 'auth'
+  const [step, setStep] = useState('choose');
   const [isSignUp, setIsSignUp] = useState(false);
+  
+  // Database Config State
+  const [supabaseUrl, setSupabaseUrl] = useState('');
+  const [supabaseKey, setSupabaseKey] = useState('');
+  
+  // Auth Form State
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  
+  // Status States
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
+  
+  // UI Helpers
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
+  const [showHelp, setShowHelp] = useState(false);
+
+  // Load existing credentials if any
+  useEffect(() => {
+    const creds = db.getCredentials();
+    if (creds.url && creds.key) {
+      setSupabaseUrl(creds.url);
+      setSupabaseKey(creds.key);
+      // If credentials already exist, skip to the auth step directly!
+      setStep('auth');
+    }
+  }, []);
 
   // Handle ambient glow tracking mouse movement
   useEffect(() => {
@@ -21,7 +45,28 @@ export default function Login({ onAuthSuccess, onBypassAuth }) {
     return () => window.removeEventListener('mousemove', handleMouseMove);
   }, []);
 
-  const handleSubmit = async (e) => {
+  const handleConnectDatabase = (e) => {
+    e.preventDefault();
+    setError('');
+    
+    if (!supabaseUrl.trim() || !supabaseKey.trim()) {
+      setError('Please fill in both the Supabase URL and Anon API Key.');
+      return;
+    }
+
+    if (!supabaseUrl.trim().startsWith('https://')) {
+      setError('Invalid URL. Supabase Project URLs must start with https://');
+      return;
+    }
+
+    // Save configuration in db service
+    db.setCredentials(supabaseUrl.trim(), supabaseKey.trim());
+    
+    // Smoothly transition to the Auth step
+    setStep('auth');
+  };
+
+  const handleAuthSubmit = async (e) => {
     e.preventDefault();
     setError('');
     setSuccessMsg('');
@@ -30,7 +75,7 @@ export default function Login({ onAuthSuccess, onBypassAuth }) {
     try {
       if (isSignUp) {
         await db.signup(email, password);
-        setSuccessMsg('Check your email for the confirmation link!');
+        setSuccessMsg('Verification email sent! Check your inbox to activate your account.');
         setEmail('');
         setPassword('');
       } else {
@@ -38,9 +83,24 @@ export default function Login({ onAuthSuccess, onBypassAuth }) {
         onAuthSuccess();
       }
     } catch (err) {
-      setError(err.message || 'An authentication error occurred.');
+      setError(err.message || 'Authentication failed. Please verify your credentials.');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleOfflineBypass = () => {
+    // Clear any saved keys to ensure a pure offline local session
+    db.setCredentials('', '');
+    onBypassAuth();
+  };
+
+  // Get project name from URL for confirmation
+  const getProjectName = () => {
+    try {
+      return new URL(supabaseUrl).hostname.split('.')[0];
+    } catch {
+      return 'Supabase';
     }
   };
 
@@ -57,185 +117,252 @@ export default function Login({ onAuthSuccess, onBypassAuth }) {
         }}
       ></div>
 
-      <div style={styles.contentWrapper}>
-        {/* Left Side: Auth Card */}
-        <div style={styles.authCard} className="glass animate-fade-in">
-          <div style={styles.logoSection}>
-            <div style={styles.logoBadge} className="pulse-logo">
-              <Sparkles size={28} color="white" />
+      <div style={styles.contentWrapper} className="animate-fade-in">
+        
+        {/* STEP 1: CHOOSE JOURNAL TYPE */}
+        {step === 'choose' && (
+          <div style={styles.chooseCard} className="glass">
+            <div style={styles.logoSection}>
+              <div style={styles.logoBadge} className="pulse-logo">
+                <Sparkles size={32} color="white" />
+              </div>
+              <h1 style={styles.title}>Welcome to Blip</h1>
+              <p style={styles.subtitle}>Choose how you would like to store your daily thoughts</p>
             </div>
-            <h1 style={styles.title}>Blip</h1>
-            <p style={styles.subtitle}>A minimal, beautiful, and secure journal</p>
+
+            <div style={styles.optionsContainer}>
+              {/* Option A: Offline */}
+              <button onClick={handleOfflineBypass} style={styles.optionBtn} className="glass-interactive">
+                <div style={{ ...styles.optionIconBadge, backgroundColor: 'rgba(156, 163, 175, 0.12)', color: 'var(--text-main)' }}>
+                  <HardDrive size={24} />
+                </div>
+                <div style={styles.optionMeta}>
+                  <span style={styles.optionTitle}>Offline Journal (Local Cache)</span>
+                  <span style={styles.optionDesc}>
+                    Keep thoughts 100% private. Data is stored entirely inside your browser cache. Zero configuration required.
+                  </span>
+                </div>
+                <ArrowRight size={16} style={styles.optionArrow} />
+              </button>
+
+              {/* Option B: Cloud Sync */}
+              <button onClick={() => setStep('setup')} style={styles.optionBtn} className="glass-interactive">
+                <div style={{ ...styles.optionIconBadge, backgroundColor: 'rgba(170, 59, 255, 0.12)', color: 'var(--accent-color)' }}>
+                  <Cloud size={24} />
+                </div>
+                <div style={styles.optionMeta}>
+                  <span style={styles.optionTitle}>Cloud Sync Journal (Supabase)</span>
+                  <span style={styles.optionDesc}>
+                    Synchronize your entries across all devices securely. Requires a free personal Supabase database setup.
+                  </span>
+                </div>
+                <ArrowRight size={16} style={styles.optionArrow} />
+              </button>
+            </div>
           </div>
+        )}
 
-          {error && (
-            <div style={styles.errorContainer} className="animate-fade-in">
-              <AlertCircle size={18} style={{ flexShrink: 0 }} />
-              <span>{error}</span>
-            </div>
-          )}
-
-          {successMsg && (
-            <div style={styles.successContainer} className="animate-fade-in">
-              <Shield size={18} style={{ flexShrink: 0 }} />
-              <span>{successMsg}</span>
-            </div>
-          )}
-
-          <form onSubmit={handleSubmit} style={styles.form}>
-            <div style={styles.inputGroup}>
-              <label style={styles.label}>Email Address</label>
-              <input
-                type="email"
-                placeholder="name@example.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                style={styles.input}
-                required
-              />
+        {/* STEP 2: DATABASE CONFIGURATION */}
+        {step === 'setup' && (
+          <div style={styles.formCard} className="glass">
+            <div style={styles.backHeader}>
+              <button onClick={() => setStep('choose')} style={styles.backBtn}>
+                <ArrowLeft size={16} />
+                <span>Back</span>
+              </button>
+              <span style={styles.stepIndicator}>Step 2 of 3</span>
             </div>
 
-            <div style={styles.inputGroup}>
-              <label style={styles.label}>Password</label>
-              <div style={styles.passwordWrapper}>
+            <div style={styles.formHeader}>
+              <h2 style={styles.sectionTitleHeader}>Connect your Database</h2>
+              <p style={styles.formSubtitle}>Paste your public Supabase API credentials to initialize cloud synchronization.</p>
+            </div>
+
+            {error && (
+              <div style={styles.errorContainer} className="animate-fade-in">
+                <AlertCircle size={18} style={{ flexShrink: 0 }} />
+                <span>{error}</span>
+              </div>
+            )}
+
+            <form onSubmit={handleConnectDatabase} style={styles.form}>
+              <div style={styles.inputGroup}>
+                <label style={styles.label}>Supabase Project URL</label>
                 <input
-                  type={showPassword ? 'text' : 'password'}
-                  placeholder="••••••••"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  style={styles.passwordInput}
+                  type="url"
+                  placeholder="https://yourproject.supabase.co"
+                  value={supabaseUrl}
+                  onChange={(e) => setSupabaseUrl(e.target.value)}
+                  style={styles.input}
                   required
                 />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  style={styles.eyeBtn}
-                >
-                  {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-                </button>
               </div>
+
+              <div style={styles.inputGroup}>
+                <label style={styles.label}>Supabase public 'anon' API Key</label>
+                <input
+                  type="text"
+                  placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                  value={supabaseKey}
+                  onChange={(e) => setSupabaseKey(e.target.value)}
+                  style={styles.input}
+                  required
+                />
+              </div>
+
+              <button type="submit" style={styles.submitBtn}>
+                <span>Connect Database & Continue</span>
+                <ArrowRight size={16} />
+              </button>
+            </form>
+
+            {/* Interactive Help Accordion */}
+            <div style={styles.helpAccordion}>
+              <button 
+                type="button" 
+                onClick={() => setShowHelp(!showHelp)} 
+                style={styles.helpAccordionToggle}
+              >
+                <HelpCircle size={16} color="var(--accent-color)" />
+                <span>How do I get these credentials?</span>
+              </button>
+              
+              {showHelp && (
+                <div style={styles.helpAccordionContent} className="animate-fade-in">
+                  <ol style={styles.helpList}>
+                    <li>Create a free account and project at <a href="https://supabase.com" target="_blank" rel="noopener noreferrer" style={styles.helpLink}>supabase.com</a>.</li>
+                    <li>Inside your Supabase dashboard, click the **Gear Icon (Project Settings)** on the bottom left.</li>
+                    <li>Select **API** under the settings category list.</li>
+                    <li>Copy the **Project URL** and the **anon public key** and paste them into the form above.</li>
+                  </ol>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* STEP 3: ACCOUNT ACCESS */}
+        {step === 'auth' && (
+          <div style={styles.formCard} className="glass">
+            <div style={styles.backHeader}>
+              <button 
+                onClick={() => {
+                  setError('');
+                  setSuccessMsg('');
+                  setStep('setup');
+                }} 
+                style={styles.backBtn}
+              >
+                <ArrowLeft size={16} />
+                <span>Edit Database Keys</span>
+              </button>
+              <span style={styles.stepIndicator}>Step 3 of 3</span>
             </div>
 
-            <button type="submit" disabled={loading} style={styles.submitBtn}>
-              {loading ? (
-                <Loader2 size={18} style={styles.spinner} />
-              ) : (
-                <>
-                  <span>{isSignUp ? 'Create Account' : 'Sign In'}</span>
-                  <ArrowRight size={16} />
-                </>
-              )}
-            </button>
-          </form>
-
-          <div style={styles.footer}>
-            <button
-              onClick={() => {
-                setIsSignUp(!isSignUp);
-                setError('');
-                setSuccessMsg('');
-              }}
-              style={styles.toggleBtn}
-            >
-              {isSignUp ? 'Already have an account? Sign In' : "Don't have an account? Sign Up"}
-            </button>
-
-            <div style={styles.divider}>or</div>
-
-            <button onClick={onBypassAuth} style={styles.offlineBtn}>
-              Continue Offline & Local-Only
-            </button>
-          </div>
-        </div>
-
-        {/* Right Side: Security Visual Diagram Card */}
-        <div style={styles.diagramCard} className="glass animate-fade-in">
-          <div style={styles.diagHeader}>
-            <Shield size={22} color="var(--accent-color)" />
-            <h3 style={styles.diagTitle}>Security & Architecture</h3>
-          </div>
-          
-          <p style={styles.diagSubtitle}>
-            How Blip protects your journal entries and prevents database credential leaks.
-          </p>
-
-          <div style={styles.flowSection}>
-            {/* Local Storage Flow */}
-            <div style={styles.modeCard}>
-              <div style={styles.modeCardHeader}>
-                <span style={styles.modeBadgeLocal}>Local Mode</span>
-                <span style={styles.modeDescText}>Offline Guest Journal</span>
+            <div style={styles.formHeader}>
+              <div style={styles.connectionConfirmBadge}>
+                <CheckCircle size={14} color="#4dabf7" />
+                <span>Connected to {getProjectName()}</span>
               </div>
-              <div style={styles.diagramLine}>
-                <div style={styles.diagramNode}>
-                  <FileText size={14} color="var(--text-main)" />
-                  <span style={styles.nodeLabel}>Write Entry</span>
-                </div>
-                <div style={styles.connector}>─────▶</div>
-                <div style={styles.diagramNode}>
-                  <Database size={14} color="var(--accent-color)" />
-                  <span style={styles.nodeLabel}>Browser Cache</span>
-                </div>
-              </div>
-              <p style={styles.modeBenefits}>
-                Data is stored locally in <code>localStorage</code>. It stays entirely inside your browser, locked behind your system lock, and never touches the web.
+              <h2 style={styles.sectionTitleHeader}>{isSignUp ? 'Create your Journal Account' : 'Sign In to your Journal'}</h2>
+              <p style={styles.formSubtitle}>
+                {isSignUp 
+                  ? 'Register an account inside your private database to isolate your records.' 
+                  : 'Enter your credentials to securely retrieve your journal entries.'}
               </p>
             </div>
 
-            {/* Cloud Sync Flow */}
-            <div style={styles.modeCard}>
-              <div style={styles.modeCardHeader}>
-                <span style={styles.modeBadgeCloud}>Cloud Sync</span>
-                <span style={styles.modeDescText}>Secure Database Isolation</span>
+            {error && (
+              <div style={styles.errorContainer} className="animate-fade-in">
+                <AlertCircle size={18} style={{ flexShrink: 0 }} />
+                <span>{error}</span>
+              </div>
+            )}
+
+            {successMsg && (
+              <div style={styles.successContainer} className="animate-fade-in">
+                <Shield size={18} style={{ flexShrink: 0 }} />
+                <span>{successMsg}</span>
+              </div>
+            )}
+
+            <form onSubmit={handleAuthSubmit} style={styles.form}>
+              <div style={styles.inputGroup}>
+                <label style={styles.label}>Email Address</label>
+                <input
+                  type="email"
+                  placeholder="name@example.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  style={styles.input}
+                  required
+                />
               </div>
 
-              {/* Visual Steps Grid */}
-              <div style={styles.stepsGrid}>
-                {/* Step 1 */}
-                <div style={styles.stepItem}>
-                  <div style={styles.stepNum}>1</div>
-                  <div style={styles.stepContent}>
-                    <div style={styles.stepTitle}>
-                      <Key size={13} color="#ff6b6b" />
-                      <span>Password Hashing</span>
-                    </div>
-                    <p style={styles.stepText}>
-                      Passwords are sent directly to Supabase Auth over HTTPS. They are securely encrypted using <strong>bcrypt</strong> before saving. No plain passwords touch the database.
-                    </p>
-                  </div>
-                </div>
-
-                {/* Step 2 */}
-                <div style={styles.stepItem}>
-                  <div style={styles.stepNum}>2</div>
-                  <div style={styles.stepContent}>
-                    <div style={styles.stepTitle}>
-                      <Server size={13} color="#4dabf7" />
-                      <span>Signed Sessions (JWT)</span>
-                    </div>
-                    <p style={styles.stepText}>
-                      Once verified, Supabase issues a cryptographically signed session token (JWT). The browser stores this temporarily to authorize operations.
-                    </p>
-                  </div>
-                </div>
-
-                {/* Step 3 */}
-                <div style={styles.stepItem}>
-                  <div style={styles.stepNum}>3</div>
-                  <div style={styles.stepContent}>
-                    <div style={styles.stepTitle}>
-                      <Database size={13} color="#b197fc" />
-                      <span>Row-Level Security (RLS)</span>
-                    </div>
-                    <p style={styles.stepText}>
-                      The database server inspects your secure token on every query. The policy <code>auth.uid() = owner</code> strictly locks your entries—other users cannot read them!
-                    </p>
-                  </div>
+              <div style={styles.inputGroup}>
+                <label style={styles.label}>Password</label>
+                <div style={styles.passwordWrapper}>
+                  <input
+                    type={showPassword ? 'text' : 'password'}
+                    placeholder="••••••••"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    style={styles.passwordInput}
+                    required
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    style={styles.eyeBtn}
+                  >
+                    {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                  </button>
                 </div>
               </div>
+
+              <button type="submit" disabled={loading} style={styles.submitBtn}>
+                {loading ? (
+                  <Loader2 size={18} style={styles.spinner} />
+                ) : (
+                  <>
+                    <span>{isSignUp ? 'Create Account' : 'Sign In'}</span>
+                    <ArrowRight size={16} />
+                  </>
+                )}
+              </button>
+            </form>
+
+            <div style={styles.footer}>
+              <button
+                type="button"
+                onClick={() => {
+                  setIsSignUp(!isSignUp);
+                  setError('');
+                  setSuccessMsg('');
+                }}
+                style={styles.toggleBtn}
+              >
+                {isSignUp ? 'Already have an account? Sign In' : "Don't have an account? Sign Up"}
+              </button>
+              
+              <div style={styles.divider}>or</div>
+
+              <button 
+                type="button"
+                onClick={() => {
+                  // Switch back to choose step
+                  setError('');
+                  setSuccessMsg('');
+                  setStep('choose');
+                }} 
+                style={styles.offlineBtn}
+              >
+                Work Offline Instead
+              </button>
             </div>
           </div>
-        </div>
+        )}
+
       </div>
     </div>
   );
@@ -255,216 +382,167 @@ const styles = {
   },
   contentWrapper: {
     display: 'flex',
-    alignItems: 'stretch',
+    alignItems: 'center',
     justifyContent: 'center',
-    gap: '32px',
-    flexWrap: 'wrap',
-    maxWidth: '1000px',
+    maxWidth: '820px',
     width: '100%',
     zIndex: 2,
   },
-  authCard: {
-    width: '420px',
+  chooseCard: {
+    width: '100%',
+    padding: '44px 40px',
+    borderRadius: '24px',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '36px',
+  },
+  formCard: {
+    width: '460px',
     maxWidth: '100%',
-    padding: '40px',
+    padding: '36px 32px',
     borderRadius: '24px',
     display: 'flex',
     flexDirection: 'column',
     gap: '24px',
-    flexShrink: 0,
-  },
-  diagramCard: {
-    width: '500px',
-    maxWidth: '100%',
-    padding: '40px',
-    borderRadius: '24px',
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '20px',
-  },
-  diagHeader: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '10px',
-  },
-  diagTitle: {
-    fontSize: '20px',
-    fontWeight: '700',
-  },
-  diagSubtitle: {
-    fontSize: '13px',
-    color: 'var(--text-muted)',
-    lineHeight: '1.4',
-  },
-  flowSection: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '18px',
-  },
-  modeCard: {
-    padding: '16px',
-    borderRadius: '14px',
-    backgroundColor: 'var(--bg-input)',
-    border: '1px solid var(--border-color)',
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '12px',
-  },
-  modeCardHeader: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '10px',
-  },
-  modeBadgeLocal: {
-    fontSize: '10px',
-    fontWeight: '800',
-    textTransform: 'uppercase',
-    padding: '3px 8px',
-    borderRadius: '6px',
-    backgroundColor: 'rgba(156, 163, 175, 0.15)',
-    color: 'var(--text-main)',
-    border: '1px solid rgba(156, 163, 175, 0.3)',
-  },
-  modeBadgeCloud: {
-    fontSize: '10px',
-    fontWeight: '800',
-    textTransform: 'uppercase',
-    padding: '3px 8px',
-    borderRadius: '6px',
-    backgroundColor: 'rgba(170, 59, 255, 0.12)',
-    color: 'var(--accent-color)',
-    border: '1px solid rgba(170, 59, 255, 0.25)',
-  },
-  modeDescText: {
-    fontSize: '12px',
-    color: 'var(--text-muted)',
-    fontWeight: '500',
-  },
-  diagramLine: {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: '12px',
-    margin: '4px 0',
-  },
-  diagramNode: {
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    gap: '4px',
-    padding: '8px 12px',
-    borderRadius: '8px',
-    backgroundColor: 'var(--bg-card)',
-    border: '1px solid var(--border-color)',
-    minWidth: '100px',
-  },
-  nodeLabel: {
-    fontSize: '11px',
-    fontWeight: '600',
-  },
-  connector: {
-    fontSize: '11px',
-    color: 'var(--text-muted)',
-    letterSpacing: '-2px',
-  },
-  modeBenefits: {
-    fontSize: '12px',
-    color: 'var(--text-muted)',
-    lineHeight: '1.4',
-    textAlign: 'center',
-  },
-  stepsGrid: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '12px',
-  },
-  stepItem: {
-    display: 'flex',
-    gap: '12px',
-    alignItems: 'flex-start',
-  },
-  stepNum: {
-    width: '20px',
-    height: '20px',
-    borderRadius: '50%',
-    backgroundColor: 'var(--border-color)',
-    color: 'var(--text-heading)',
-    fontSize: '11px',
-    fontWeight: '700',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    flexShrink: 0,
-    marginTop: '2px',
-  },
-  stepContent: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '3px',
-  },
-  stepTitle: {
-    fontSize: '12.5px',
-    fontWeight: '700',
-    color: 'var(--text-heading)',
-    display: 'flex',
-    alignItems: 'center',
-    gap: '6px',
-  },
-  stepText: {
-    fontSize: '11.5px',
-    color: 'var(--text-muted)',
-    lineHeight: '1.4',
   },
   logoSection: {
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'center',
     textAlign: 'center',
-    gap: '8px',
+    gap: '12px',
   },
   logoBadge: {
-    width: '56px',
-    height: '56px',
-    borderRadius: '16px',
+    width: '64px',
+    height: '64px',
+    borderRadius: '18px',
     background: 'linear-gradient(135deg, hsl(255, 85%, 65%) 0%, hsl(205, 100%, 62%) 100%)',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
     boxShadow: '0 8px 24px hsla(255, 85%, 65%, 0.4)',
-    marginBottom: '12px',
+    marginBottom: '8px',
   },
   title: {
-    fontSize: '32px',
+    fontSize: '36px',
     fontWeight: '800',
-    background: 'linear-gradient(to right, #ffffff, #d8d8d8)',
+    fontFamily: 'var(--font-title)',
+    background: 'linear-gradient(to right, #ffffff, #dcdcdc)',
     WebkitBackgroundClip: 'text',
     WebkitTextFillColor: 'transparent',
+    letterSpacing: '-0.02em',
   },
   subtitle: {
-    fontSize: '14px',
+    fontSize: '15px',
     color: 'var(--text-muted)',
+    maxWidth: '420px',
+    lineHeight: '1.45',
   },
-  errorContainer: {
+  optionsContainer: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '14px',
+  },
+  optionBtn: {
     display: 'flex',
     alignItems: 'center',
-    gap: '10px',
-    padding: '12px 16px',
-    backgroundColor: 'rgba(255, 107, 107, 0.12)',
-    border: '1px solid rgba(255, 107, 107, 0.3)',
-    borderRadius: '12px',
-    color: '#ff6b6b',
-    fontSize: '13.5px',
+    gap: '20px',
+    padding: '20px 24px',
+    borderRadius: '16px',
+    backgroundColor: 'var(--bg-card)',
+    border: '1px solid var(--border-color)',
+    textAlign: 'left',
+    cursor: 'pointer',
+    width: '100%',
   },
-  successContainer: {
+  optionIconBadge: {
+    width: '52px',
+    height: '52px',
+    borderRadius: '12px',
     display: 'flex',
     alignItems: 'center',
-    gap: '10px',
-    padding: '12px 16px',
-    backgroundColor: 'rgba(77, 171, 247, 0.12)',
-    border: '1px solid rgba(77, 171, 247, 0.3)',
-    borderRadius: '12px',
+    justifyContent: 'center',
+    flexShrink: 0,
+  },
+  optionMeta: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '4px',
+    flex: 1,
+  },
+  optionTitle: {
+    fontSize: '16px',
+    fontWeight: '700',
+    color: 'var(--text-heading)',
+  },
+  optionDesc: {
+    fontSize: '12.5px',
+    color: 'var(--text-muted)',
+    lineHeight: '1.45',
+  },
+  optionArrow: {
+    color: 'var(--text-muted)',
+    opacity: 0.5,
+    marginLeft: '8px',
+  },
+  backHeader: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    borderBottom: '1px solid var(--border-color)',
+    paddingBottom: '14px',
+    marginBottom: '4px',
+  },
+  backBtn: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px',
+    color: 'var(--text-muted)',
+    fontSize: '13px',
+    fontWeight: '600',
+    padding: '4px 8px',
+    borderRadius: '6px',
+    ':hover': {
+      color: 'var(--text-main)',
+      backgroundColor: 'hsla(0, 0%, 50%, 0.08)',
+    }
+  },
+  stepIndicator: {
+    fontSize: '12px',
+    fontWeight: '600',
+    color: 'var(--text-muted)',
+    textTransform: 'uppercase',
+    letterSpacing: '0.05em',
+  },
+  formHeader: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '6px',
+  },
+  sectionTitleHeader: {
+    fontSize: '22px',
+    fontWeight: '800',
+  },
+  formSubtitle: {
+    fontSize: '13px',
+    color: 'var(--text-muted)',
+    lineHeight: '1.4',
+  },
+  connectionConfirmBadge: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: '6px',
+    padding: '4px 8px',
+    borderRadius: '6px',
+    backgroundColor: 'rgba(77, 171, 247, 0.08)',
+    border: '1px solid rgba(77, 171, 247, 0.2)',
     color: '#4dabf7',
-    fontSize: '13.5px',
+    fontSize: '11.5px',
+    fontWeight: '700',
+    textTransform: 'uppercase',
+    letterSpacing: '0.03em',
+    width: 'fit-content',
+    marginBottom: '4px',
   },
   form: {
     display: 'flex',
@@ -493,6 +571,10 @@ const styles = {
     outline: 'none',
     transition: 'var(--transition-normal)',
     fontSize: '14.5px',
+    ':focus': {
+      borderColor: 'var(--accent-color)',
+      boxShadow: '0 0 0 3px var(--accent-glow)',
+    }
   },
   passwordWrapper: {
     position: 'relative',
@@ -509,6 +591,10 @@ const styles = {
     outline: 'none',
     transition: 'var(--transition-normal)',
     fontSize: '14.5px',
+    ':focus': {
+      borderColor: 'var(--accent-color)',
+      boxShadow: '0 0 0 3px var(--accent-glow)',
+    }
   },
   eyeBtn: {
     position: 'absolute',
@@ -541,6 +627,66 @@ const styles = {
   spinner: {
     animation: 'spin 1s linear infinite',
   },
+  helpAccordion: {
+    borderTop: '1px solid var(--border-color)',
+    paddingTop: '14px',
+    marginTop: '4px',
+  },
+  helpAccordionToggle: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px',
+    fontSize: '13px',
+    color: 'var(--text-main)',
+    fontWeight: '600',
+    width: '100%',
+    textAlign: 'left',
+  },
+  helpAccordionContent: {
+    marginTop: '10px',
+    padding: '12px',
+    backgroundColor: 'var(--bg-input)',
+    borderRadius: '10px',
+    border: '1px solid var(--border-color)',
+  },
+  helpList: {
+    fontSize: '12px',
+    color: 'var(--text-muted)',
+    lineHeight: '1.5',
+    paddingLeft: '18px',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '6px',
+  },
+  helpLink: {
+    color: 'var(--accent-color)',
+    textDecoration: 'underline',
+    fontWeight: '600',
+  },
+  errorContainer: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '10px',
+    padding: '12px 16px',
+    backgroundColor: 'rgba(255, 107, 107, 0.12)',
+    border: '1px solid rgba(255, 107, 107, 0.3)',
+    borderRadius: '12px',
+    color: '#ff6b6b',
+    fontSize: '13.2px',
+    lineHeight: '1.4',
+  },
+  successContainer: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '10px',
+    padding: '12px 16px',
+    backgroundColor: 'rgba(77, 171, 247, 0.12)',
+    border: '1px solid rgba(77, 171, 247, 0.3)',
+    borderRadius: '12px',
+    color: '#4dabf7',
+    fontSize: '13.2px',
+    lineHeight: '1.4',
+  },
   footer: {
     display: 'flex',
     flexDirection: 'column',
@@ -567,13 +713,27 @@ const styles = {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
+    ':before': {
+      content: '""',
+      flex: 1,
+      height: '1px',
+      backgroundColor: 'var(--border-color)',
+      marginRight: '12px',
+    },
+    ':after': {
+      content: '""',
+      flex: 1,
+      height: '1px',
+      backgroundColor: 'var(--border-color)',
+      marginLeft: '12px',
+    }
   },
   offlineBtn: {
-    color: 'var(--accent-color)',
-    fontSize: '14px',
+    color: 'var(--text-muted)',
+    fontSize: '13.5px',
     fontWeight: '600',
     ':hover': {
-      color: 'var(--accent-hover)',
+      color: 'var(--text-main)',
     }
   }
 };
