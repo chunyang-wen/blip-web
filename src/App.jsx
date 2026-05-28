@@ -49,6 +49,71 @@ export default function App() {
     localStorage.setItem('blip_theme', theme);
   }, [theme]);
 
+  // Day Rollover Detector: auto-update "Today" view when the date rolls over
+  // (e.g. overnight usage, computer wake/sleep, or timezone/NTP clock corrections)
+  useEffect(() => {
+    let lastSystemDate = new Date();
+
+    const checkDateRollover = () => {
+      const now = new Date();
+      
+      // If the calendar day has changed since the app was last checked
+      if (
+        now.getDate() !== lastSystemDate.getDate() ||
+        now.getMonth() !== lastSystemDate.getMonth() ||
+        now.getFullYear() !== lastSystemDate.getFullYear()
+      ) {
+        setFocusDate(prevDate => {
+          // If the previous focusDate represented the "old today", seamlessly roll it over to the "new today"
+          const wasPrevDateToday = (
+            prevDate.getDate() === lastSystemDate.getDate() &&
+            prevDate.getMonth() === lastSystemDate.getMonth() &&
+            prevDate.getFullYear() === lastSystemDate.getFullYear()
+          );
+
+          if (wasPrevDateToday) {
+            return now;
+          }
+          return prevDate;
+        });
+        
+        lastSystemDate = now;
+      }
+    };
+
+    let clockCorrectionTimeout = null;
+
+    const handleEvent = () => {
+      // 1. Check immediately
+      checkDateRollover();
+
+      // 2. Clear any existing timeout and schedule a check 3 seconds later.
+      // This solves the "system clock wake-up lag" where the OS takes a couple of seconds 
+      // to sync with network time (NTP) after waking up from deep sleep.
+      if (clockCorrectionTimeout) {
+        clearTimeout(clockCorrectionTimeout);
+      }
+      clockCorrectionTimeout = setTimeout(checkDateRollover, 3000);
+    };
+
+    // Check on window focus and visibility changes (highly responsive on laptop lid open)
+    window.addEventListener('focus', handleEvent);
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        handleEvent();
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      window.removeEventListener('focus', handleEvent);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      if (clockCorrectionTimeout) {
+        clearTimeout(clockCorrectionTimeout);
+      }
+    };
+  }, []);
+
   // Auth State Listener
   useEffect(() => {
     db.registerAuthListener(async (event, session) => {
