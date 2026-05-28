@@ -42,7 +42,6 @@ export default function Composer({ onSave, isSaving = false, isCloud = false }) 
   };
 
   const activeMoodColor = moods.find(m => m.value === mood).color;
-  const activeMoodShadow = moods.find(m => m.value === mood).shadow;
 
   return (
     <div style={styles.composerWrapper}>
@@ -50,11 +49,19 @@ export default function Composer({ onSave, isSaving = false, isCloud = false }) 
         onSubmit={handleSubmit} 
         style={{
           ...styles.composerForm,
-          borderColor: isFocused ? activeMoodColor : 'var(--border-color)',
-          boxShadow: isFocused ? `0 0 0 3px hsla(${activeMoodShadow}, 0.12), var(--shadow-md)` : 'var(--shadow-sm)',
+          borderColor: isFocused ? 'var(--border-color-hover)' : 'var(--border-color)',
+          boxShadow: isFocused ? 'var(--shadow-md)' : 'var(--shadow-sm)',
+          backgroundColor: isFocused ? 'var(--bg-card-hover)' : 'var(--bg-card)',
         }}
         className="glass animate-fade-in"
       >
+        <div
+          style={{
+            ...styles.focusAccent,
+            backgroundColor: activeMoodColor,
+            opacity: isFocused || text.length > 0 ? 1 : 0,
+          }}
+        />
         <textarea
           ref={textareaRef}
           value={text}
@@ -71,6 +78,7 @@ export default function Composer({ onSave, isSaving = false, isCloud = false }) 
             ...styles.textarea,
             height: isFocused || text.length > 0 ? '120px' : '48px',
           }}
+          className="composer-textarea"
         />
 
         {/* Action Row - only shown when focused or has text */}
@@ -163,6 +171,7 @@ const styles = {
     flexShrink: 0,
   },
   composerForm: {
+    position: 'relative',
     borderRadius: '8px',
     padding: '18px 18px 16px',
     display: 'flex',
@@ -172,6 +181,15 @@ const styles = {
     backgroundImage: 'linear-gradient(transparent 31px, hsla(38, 18%, 45%, 0.12) 32px)',
     backgroundSize: '100% 32px',
     transition: 'border-color 0.3s ease, box-shadow 0.3s ease',
+  },
+  focusAccent: {
+    position: 'absolute',
+    left: '0',
+    top: '16px',
+    bottom: '16px',
+    width: '4px',
+    borderRadius: '0 4px 4px 0',
+    transition: 'opacity 0.2s ease, background-color 0.2s ease',
   },
   textarea: {
     width: '100%',

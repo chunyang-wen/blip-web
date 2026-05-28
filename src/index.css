@@ -297,6 +297,11 @@ textarea:focus {
   box-shadow: 0 0 0 3px var(--accent-glow);
 }
 
+.composer-textarea:focus {
+  box-shadow: none;
+  border-color: transparent !important;
+}
+
 .icon-button:hover,
 .quiet-button:hover,
 .card-action:hover,
