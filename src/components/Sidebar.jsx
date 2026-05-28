@@ -44,26 +44,27 @@ export default function Sidebar({
         <div style={styles.navGroup}>
           <div style={styles.navHeader}>Intervals</div>
           <nav style={styles.nav}>
-            {intervals.map((item) => (
-              <button
-                key={item.id}
-                onClick={() => {
-                  setSelectedInterval(item.id);
-                  setShowInsights(false);
-                  setFilterFavorites(false);
-                }}
-                style={{
-                  ...styles.navItem,
-                  ...(selectedInterval === item.id && !showInsights && !filterFavorites
-                    ? styles.navItemActive
-                    : {}),
-                }}
-                className="sidebar-nav-item"
-              >
-                <Calendar size={18} />
-                <span>{item.label}</span>
-              </button>
-            ))}
+            {intervals.map((item) => {
+              const isActive = selectedInterval === item.id && !showInsights && !filterFavorites;
+
+              return (
+                <button
+                  key={item.id}
+                  onMouseDown={(e) => e.preventDefault()}
+                  onClick={(e) => {
+                    setSelectedInterval(item.id);
+                    setShowInsights(false);
+                    setFilterFavorites(false);
+                    e.currentTarget.blur();
+                  }}
+                  style={styles.navItem}
+                  className={`sidebar-nav-item ${isActive ? 'sidebar-nav-item-active' : ''}`}
+                >
+                  <Calendar size={18} />
+                  <span>{item.label}</span>
+                </button>
+              );
+            })}
           </nav>
         </div>
 
@@ -72,30 +73,28 @@ export default function Sidebar({
           <div style={styles.navHeader}>Library</div>
           <nav style={styles.nav}>
             <button
-              onClick={() => {
+              onMouseDown={(e) => e.preventDefault()}
+              onClick={(e) => {
                 setFilterFavorites(!filterFavorites);
                 setShowInsights(false);
+                e.currentTarget.blur();
               }}
-              style={{
-                ...styles.navItem,
-                ...(filterFavorites && !showInsights ? styles.navItemActive : {}),
-              }}
-              className="sidebar-nav-item"
+              style={styles.navItem}
+              className={`sidebar-nav-item ${filterFavorites && !showInsights ? 'sidebar-nav-item-active' : ''}`}
             >
               <Heart size={18} fill={filterFavorites ? 'currentColor' : 'none'} />
               <span>Favorites</span>
             </button>
 
             <button
-              onClick={() => {
+              onMouseDown={(e) => e.preventDefault()}
+              onClick={(e) => {
                 setShowInsights(!showInsights);
                 setFilterFavorites(false);
+                e.currentTarget.blur();
               }}
-              style={{
-                ...styles.navItem,
-                ...(showInsights ? styles.navItemActive : {}),
-              }}
-              className="sidebar-nav-item"
+              style={styles.navItem}
+              className={`sidebar-nav-item ${showInsights ? 'sidebar-nav-item-active' : ''}`}
             >
               <BarChart3 size={18} />
               <span>Mood Insights</span>
@@ -249,12 +248,6 @@ const styles = {
     fontWeight: '500',
     border: '1px solid transparent',
     transition: 'var(--transition-normal)',
-  },
-  navItemActive: {
-    backgroundColor: 'hsla(42, 55%, 93%, 0.1)',
-    color: 'var(--text-on-dark)',
-    borderColor: 'hsla(42, 28%, 74%, 0.16)',
-    boxShadow: 'inset 3px 0 0 var(--brass)',
   },
   bottomSection: {
     display: 'flex',

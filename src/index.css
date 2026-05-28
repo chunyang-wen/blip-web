@@ -275,13 +275,28 @@ button:active:not(:disabled) {
   transform: scale(0.98);
 }
 
+.sidebar-nav-item:focus {
+  outline: none;
+}
+
+.sidebar-nav-item:focus-visible {
+  outline: 2px solid var(--brass);
+  outline-offset: 2px;
+}
+
+.sidebar-nav-item:not(.sidebar-nav-item-active) {
+  background: transparent !important;
+  border-color: transparent !important;
+  box-shadow: none !important;
+  color: var(--text-on-dark-muted) !important;
+}
+
 input:focus,
 textarea:focus {
   border-color: var(--accent-color) !important;
   box-shadow: 0 0 0 3px var(--accent-glow);
 }
 
-.sidebar-nav-item:hover,
 .icon-button:hover,
 .quiet-button:hover,
 .card-action:hover,
@@ -291,11 +306,27 @@ textarea:focus {
   color: var(--text-heading) !important;
 }
 
-.sidebar-nav-item:hover,
 .tool-button:hover {
   background: hsla(42, 55%, 93%, 0.08) !important;
   border-color: hsla(42, 28%, 74%, 0.16) !important;
   color: var(--text-on-dark) !important;
+}
+
+.sidebar-nav-item:hover {
+  background: hsla(42, 55%, 93%, 0.06);
+  color: var(--text-on-dark);
+}
+
+.sidebar-nav-item-active {
+  background: hsla(42, 55%, 93%, 0.1) !important;
+  border-color: hsla(42, 28%, 74%, 0.16) !important;
+  box-shadow: inset 3px 0 0 var(--brass) !important;
+  color: var(--text-on-dark) !important;
+}
+
+.sidebar-nav-item-active:hover {
+  background: hsla(42, 55%, 93%, 0.1) !important;
+  border-color: hsla(42, 28%, 74%, 0.16) !important;
 }
 
 .entry-card:hover,
