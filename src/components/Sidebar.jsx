@@ -1,5 +1,4 @@
-import React from 'react';
-import { Calendar, Heart, BarChart3, Settings, LogOut, Cloud, CloudOff, RefreshCw, Sun, Moon } from 'lucide-react';
+import { Calendar, Heart, BarChart3, Settings, LogOut, Cloud, CloudOff, RefreshCw, Sun, Moon, Feather } from 'lucide-react';
 
 export default function Sidebar({
   selectedInterval,
@@ -31,12 +30,12 @@ export default function Sidebar({
   };
 
   return (
-    <aside style={styles.sidebar} className="glass">
+    <aside style={styles.sidebar}>
       <div style={styles.topSection}>
         {/* Brand Logo */}
         <div style={styles.brand}>
           <div style={styles.logoBadge} className="pulse-logo">
-            <span style={styles.logoSymbol}>✦</span>
+            <Feather size={18} strokeWidth={2.4} />
           </div>
           <span style={styles.brandName}>Blip</span>
         </div>
@@ -58,6 +57,7 @@ export default function Sidebar({
                     ? styles.navItemActive
                     : {}),
                 }}
+                className="sidebar-nav-item"
               >
                 <Calendar size={18} />
                 <span>{item.label}</span>
@@ -79,8 +79,9 @@ export default function Sidebar({
                 ...styles.navItem,
                 ...(filterFavorites && !showInsights ? styles.navItemActive : {}),
               }}
+              className="sidebar-nav-item"
             >
-              <Heart size={18} fill={filterFavorites ? 'currentColor' : 'none'} color={filterFavorites ? '#ff6b6b' : 'currentColor'} />
+              <Heart size={18} fill={filterFavorites ? 'currentColor' : 'none'} />
               <span>Favorites</span>
             </button>
 
@@ -93,6 +94,7 @@ export default function Sidebar({
                 ...styles.navItem,
                 ...(showInsights ? styles.navItemActive : {}),
               }}
+              className="sidebar-nav-item"
             >
               <BarChart3 size={18} />
               <span>Mood Insights</span>
@@ -107,15 +109,15 @@ export default function Sidebar({
         <div 
           style={{
             ...styles.syncBadge,
-            backgroundColor: isCloud ? 'rgba(77, 171, 247, 0.1)' : 'rgba(156, 163, 175, 0.1)',
-            borderColor: isCloud ? 'rgba(77, 171, 247, 0.3)' : 'rgba(156, 163, 175, 0.2)',
+            backgroundColor: isCloud ? 'hsla(var(--mood-tough), 0.12)' : 'hsla(42, 22%, 70%, 0.1)',
+            borderColor: isCloud ? 'hsla(var(--mood-tough), 0.35)' : 'var(--border-color)',
           }}
         >
           <div style={styles.syncStatusLeft}>
             {isCloud ? (
               <>
-                <Cloud size={14} color="#4dabf7" />
-                <span style={{ ...styles.syncText, color: '#4dabf7' }}>Cloud Sync</span>
+                <Cloud size={14} color="hsl(var(--mood-tough))" />
+                <span style={{ ...styles.syncText, color: 'hsl(var(--mood-tough))' }}>Cloud Sync</span>
               </>
             ) : (
               <>
@@ -129,6 +131,7 @@ export default function Sidebar({
               onClick={onForceSync} 
               disabled={syncing}
               style={styles.syncActionBtn}
+              className="icon-button"
               data-tooltip="Sync entries now"
             >
               <RefreshCw size={12} style={{ animation: syncing ? 'spin 1s linear infinite' : 'none' }} />
@@ -152,15 +155,16 @@ export default function Sidebar({
           <button 
             onClick={toggleTheme} 
             style={styles.toolBtn}
+            className="tool-button"
             data-tooltip={`Switch to ${theme === 'dark' ? 'Light' : 'Dark'} Mode`}
           >
             {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
           </button>
-          <button onClick={onOpenSettings} style={styles.toolBtn} data-tooltip="App Settings">
+          <button onClick={onOpenSettings} style={styles.toolBtn} className="tool-button" data-tooltip="App Settings">
             <Settings size={18} />
           </button>
           {user && (
-            <button onClick={onLogout} style={styles.toolBtn} data-tooltip="Sign Out">
+            <button onClick={onLogout} style={styles.toolBtn} className="tool-button" data-tooltip="Sign Out">
               <LogOut size={18} />
             </button>
           )}
@@ -172,20 +176,23 @@ export default function Sidebar({
 
 const styles = {
   sidebar: {
-    width: '260px',
+    width: '268px',
     height: '100%',
     display: 'flex',
     flexDirection: 'column',
     justifyContent: 'space-between',
-    padding: '24px 16px',
-    borderRight: '1px solid var(--border-color)',
+    padding: '26px 18px',
+    borderRight: '1px solid hsla(42, 28%, 74%, 0.12)',
+    backgroundColor: 'var(--bg-sidebar)',
+    color: 'var(--text-on-dark)',
+    boxShadow: 'inset -1px 0 0 hsla(42, 28%, 74%, 0.06)',
     flexShrink: 0,
     zIndex: 10,
   },
   topSection: {
     display: 'flex',
     flexDirection: 'column',
-    gap: '32px',
+    gap: '34px',
   },
   brand: {
     display: 'flex',
@@ -194,27 +201,21 @@ const styles = {
     paddingLeft: '8px',
   },
   logoBadge: {
-    width: '32px',
-    height: '32px',
+    width: '34px',
+    height: '34px',
     borderRadius: '8px',
-    background: 'linear-gradient(135deg, hsl(255, 85%, 65%) 0%, hsl(205, 100%, 62%) 100%)',
+    background: 'linear-gradient(135deg, var(--brass), var(--accent-color))',
+    color: 'hsl(196, 31%, 9%)',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
   },
-  logoSymbol: {
-    color: 'white',
-    fontSize: '20px',
-    fontWeight: 'bold',
-    lineHeight: 1,
-    marginTop: '-2px',
-  },
   brandName: {
-    fontSize: '20px',
-    fontWeight: '800',
+    fontSize: '24px',
+    fontWeight: '750',
     fontFamily: 'var(--font-title)',
-    color: 'var(--text-heading)',
-    letterSpacing: '-0.02em',
+    color: 'var(--text-on-dark)',
+    letterSpacing: '0',
   },
   navGroup: {
     display: 'flex',
@@ -224,7 +225,7 @@ const styles = {
   navHeader: {
     fontSize: '11px',
     fontWeight: '700',
-    color: 'var(--text-muted)',
+    color: 'var(--text-on-dark-muted)',
     textTransform: 'uppercase',
     letterSpacing: '0.08em',
     paddingLeft: '12px',
@@ -241,30 +242,24 @@ const styles = {
     alignItems: 'center',
     gap: '12px',
     padding: '10px 14px',
-    borderRadius: '10px',
-    color: 'var(--text-main)',
+    borderRadius: '8px',
+    color: 'var(--text-on-dark-muted)',
     fontSize: '14px',
     fontWeight: '500',
+    border: '1px solid transparent',
     transition: 'var(--transition-normal)',
-    ':hover': {
-      backgroundColor: 'hsla(0, 0%, 50%, 0.08)',
-      transform: 'translateX(2px)',
-    }
   },
   navItemActive: {
-    backgroundColor: 'var(--accent-color)',
-    color: 'white',
-    boxShadow: '0 4px 12px hsla(255, 85%, 65%, 0.25)',
-    ':hover': {
-      backgroundColor: 'var(--accent-hover)',
-      transform: 'none',
-    }
+    backgroundColor: 'hsla(42, 55%, 93%, 0.1)',
+    color: 'var(--text-on-dark)',
+    borderColor: 'hsla(42, 28%, 74%, 0.16)',
+    boxShadow: 'inset 3px 0 0 var(--brass)',
   },
   bottomSection: {
     display: 'flex',
     flexDirection: 'column',
     gap: '16px',
-    borderTop: '1px solid var(--border-color)',
+    borderTop: '1px solid hsla(42, 28%, 74%, 0.12)',
     paddingTop: '20px',
   },
   syncBadge: {
@@ -283,7 +278,7 @@ const styles = {
   syncText: {
     fontSize: '12px',
     fontWeight: '600',
-    color: 'var(--text-muted)',
+    color: 'var(--text-on-dark-muted)',
   },
   syncActionBtn: {
     display: 'flex',
@@ -291,10 +286,8 @@ const styles = {
     justifyContent: 'center',
     padding: '4px',
     borderRadius: '4px',
-    color: '#4dabf7',
-    ':hover': {
-      backgroundColor: 'rgba(77, 171, 247, 0.15)',
-    }
+    color: 'hsl(var(--mood-tough))',
+    border: '1px solid transparent',
   },
   userCard: {
     display: 'flex',
@@ -306,9 +299,9 @@ const styles = {
     width: '40px',
     height: '40px',
     borderRadius: '10px',
-    background: 'linear-gradient(135deg, hsla(255, 85%, 65%, 0.15) 0%, hsla(205, 100%, 62%, 0.15) 100%)',
-    border: '1px solid var(--border-color)',
-    color: 'var(--accent-color)',
+    background: 'hsla(42, 55%, 93%, 0.09)',
+    border: '1px solid hsla(42, 28%, 74%, 0.15)',
+    color: 'var(--text-on-dark)',
     fontWeight: '700',
     fontSize: '15px',
     display: 'flex',
@@ -324,14 +317,14 @@ const styles = {
   userName: {
     fontSize: '14px',
     fontWeight: '600',
-    color: 'var(--text-heading)',
+    color: 'var(--text-on-dark)',
     whiteSpace: 'nowrap',
     textOverflow: 'ellipsis',
     overflow: 'hidden',
   },
   userRole: {
     fontSize: '11px',
-    color: 'var(--text-muted)',
+    color: 'var(--text-on-dark-muted)',
   },
   toolbar: {
     display: 'flex',
@@ -343,16 +336,11 @@ const styles = {
     flex: 1,
     height: '36px',
     borderRadius: '8px',
-    border: '1px solid var(--border-color)',
-    color: 'var(--text-muted)',
+    border: '1px solid hsla(42, 28%, 74%, 0.14)',
+    color: 'var(--text-on-dark-muted)',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
     transition: 'var(--transition-normal)',
-    ':hover': {
-      backgroundColor: 'hsla(0, 0%, 50%, 0.08)',
-      color: 'var(--text-main)',
-      borderColor: 'var(--border-color-hover)',
-    }
   }
 };

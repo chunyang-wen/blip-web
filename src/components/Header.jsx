@@ -1,5 +1,4 @@
-import React from 'react';
-import { ChevronLeft, ChevronRight, RotateCcw } from 'lucide-react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 export default function Header({
   focusDate,
@@ -140,6 +139,7 @@ export default function Header({
           <button 
             onClick={() => shiftPeriod(-1)} 
             style={styles.navBtn} 
+            className="icon-button"
             data-tooltip={`Previous ${selectedInterval}`}
           >
             <ChevronLeft size={16} />
@@ -157,6 +157,7 @@ export default function Header({
           <button 
             onClick={() => shiftPeriod(1)} 
             style={styles.navBtn} 
+            className="icon-button"
             data-tooltip={`Next ${selectedInterval}`}
           >
             <ChevronRight size={16} />
@@ -169,60 +170,58 @@ export default function Header({
 
 const styles = {
   header: {
-    padding: '24px 32px',
+    padding: '28px 36px 22px',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'space-between',
     borderBottom: '1px solid var(--border-color)',
+    background: 'linear-gradient(180deg, hsla(42, 55%, 93%, 0.42), transparent)',
     flexShrink: 0,
   },
   titleSection: {
     display: 'flex',
     flexDirection: 'column',
-    gap: '4px',
+    gap: '6px',
   },
   title: {
-    fontSize: '26px',
-    fontWeight: '800',
+    fontSize: '34px',
+    fontWeight: '650',
     color: 'var(--text-heading)',
     display: 'flex',
     alignItems: 'center',
     gap: '10px',
   },
   countBadge: {
-    fontSize: '14px',
-    fontWeight: '700',
-    padding: '3px 8px',
-    borderRadius: '8px',
-    backgroundColor: 'var(--border-color)',
-    color: 'var(--text-muted)',
+    fontSize: '13px',
+    fontWeight: '800',
+    padding: '3px 9px',
+    borderRadius: '999px',
+    backgroundColor: 'hsla(var(--mood-question), 0.12)',
+    color: 'var(--accent-hover)',
     verticalAlign: 'middle',
   },
   subtitle: {
-    fontSize: '13.5px',
+    fontSize: '14px',
     color: 'var(--text-muted)',
     fontWeight: '500',
   },
   navControls: {
     display: 'flex',
     alignItems: 'center',
-    borderRadius: '10px',
-    padding: '2px',
-    width: '148px',
+    borderRadius: '8px',
+    padding: '3px',
+    width: '164px',
   },
   navBtn: {
-    width: '32px',
-    height: '32px',
-    borderRadius: '8px',
+    width: '34px',
+    height: '34px',
+    borderRadius: '7px',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
     color: 'var(--text-muted)',
+    border: '1px solid transparent',
     transition: 'var(--transition-normal)',
-    ':hover': {
-      backgroundColor: 'hsla(0, 0%, 50%, 0.1)',
-      color: 'var(--text-main)',
-    }
   },
   navLabel: {
     flex: 1,
@@ -232,7 +231,7 @@ const styles = {
     color: 'var(--text-muted)',
     userSelect: 'none',
     cursor: 'pointer',
-    letterSpacing: '0.05em',
+    letterSpacing: '0.08em',
     padding: '0 4px',
     overflow: 'hidden',
     textOverflow: 'ellipsis',

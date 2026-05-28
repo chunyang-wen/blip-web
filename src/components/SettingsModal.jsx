@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { db } from '../services/db';
-import { X, ShieldAlert, Copy, Check, Download, Upload, Cloud, HardDrive, Info } from 'lucide-react';
+import { X, ShieldAlert, Copy, Check, Download, Upload, Cloud, HardDrive } from 'lucide-react';
 
 export default function SettingsModal({ onClose, onConfigChange, allEntries, onImportComplete }) {
   const currentCredentials = db.getCredentials();
@@ -100,7 +100,7 @@ with check (
         {/* Modal Header */}
         <div style={styles.header}>
           <h3 style={styles.title}>Settings</h3>
-          <button onClick={onClose} style={styles.closeBtn}>
+          <button onClick={onClose} style={styles.closeBtn} className="icon-button">
             <X size={20} />
           </button>
         </div>
@@ -117,8 +117,9 @@ with check (
                 style={{
                   ...styles.modeBtn,
                   borderColor: !useCloud ? 'var(--accent-color)' : 'var(--border-color)',
-                  backgroundColor: !useCloud ? 'rgba(170, 59, 255, 0.05)' : 'transparent',
+                  backgroundColor: !useCloud ? 'hsla(var(--mood-question), 0.08)' : 'transparent',
                 }}
+                className="quiet-button"
               >
                 <HardDrive size={18} color={!useCloud ? 'var(--accent-color)' : 'var(--text-muted)'} />
                 <div style={styles.modeMeta}>
@@ -133,8 +134,9 @@ with check (
                 style={{
                   ...styles.modeBtn,
                   borderColor: useCloud ? 'var(--accent-color)' : 'var(--border-color)',
-                  backgroundColor: useCloud ? 'rgba(170, 59, 255, 0.05)' : 'transparent',
+                  backgroundColor: useCloud ? 'hsla(var(--mood-question), 0.08)' : 'transparent',
                 }}
+                className="quiet-button"
               >
                 <Cloud size={18} color={useCloud ? 'var(--accent-color)' : 'var(--text-muted)'} />
                 <div style={styles.modeMeta}>
@@ -174,7 +176,7 @@ with check (
                   />
                 </div>
 
-                <button type="submit" style={styles.saveBtn}>
+                <button type="submit" style={styles.saveBtn} className="primary-button">
                   {saveSuccess ? <Check size={16} /> : null}
                   <span>{saveSuccess ? 'Credentials Saved!' : 'Save & Initialize Cloud Sync'}</span>
                 </button>
@@ -182,7 +184,7 @@ with check (
 
               {/* RLS secure info block */}
               <div style={styles.infoBlock}>
-                <ShieldAlert size={18} color="#4dabf7" style={{ flexShrink: 0 }} />
+                <ShieldAlert size={18} color="hsl(var(--mood-tough))" style={{ flexShrink: 0 }} />
                 <span style={styles.infoText}>
                   <strong>Important Security Notice:</strong> Enabling Supabase connects this app directly to your remote database. To prevent credential leaks or data exposure, ensure you run the table migration script and enable <strong>Row Level Security (RLS)</strong> on Supabase.
                 </span>
@@ -192,8 +194,8 @@ with check (
               <div style={styles.sqlSection}>
                 <div style={styles.sqlHeader}>
                   <span style={styles.sqlTitle}>Database Setup SQL Code</span>
-                  <button onClick={copySQLCode} style={styles.copyBtn}>
-                    {copiedSql ? <Check size={14} color="#4dabf7" /> : <Copy size={14} />}
+                  <button onClick={copySQLCode} style={styles.copyBtn} className="quiet-button">
+                    {copiedSql ? <Check size={14} color="hsl(var(--mood-tough))" /> : <Copy size={14} />}
                     <span>{copiedSql ? 'Copied!' : 'Copy SQL Script'}</span>
                   </button>
                 </div>
@@ -207,7 +209,7 @@ with check (
           {!useCloud && (
             <div style={styles.section}>
               <form onSubmit={handleSaveCredentials} style={styles.credForm}>
-                <button type="submit" style={styles.saveBtn}>
+                <button type="submit" style={styles.saveBtn} className="primary-button">
                   {saveSuccess ? <Check size={16} /> : null}
                   <span>{saveSuccess ? 'Switched to Offline!' : 'Confirm Offline Mode'}</span>
                 </button>
@@ -220,14 +222,14 @@ with check (
             <h4 style={styles.sectionTitle}>Backup & Migration Tools</h4>
             <div style={styles.backupActions}>
               {/* Export JSON */}
-              <button onClick={exportData} style={styles.backupBtn}>
+              <button onClick={exportData} style={styles.backupBtn} className="quiet-button">
                 <Download size={16} />
                 <span>Export Journal Backup (JSON)</span>
               </button>
 
               {/* Import JSON */}
               <div style={styles.importWrapper}>
-                <label htmlFor="import-file" style={styles.importLabelBtn}>
+                <label htmlFor="import-file" style={styles.importLabelBtn} className="quiet-button">
                   <Upload size={16} />
                   <span>Import Journal Backup (JSON)</span>
                 </label>
@@ -268,8 +270,8 @@ const styles = {
     left: 0,
     width: '100vw',
     height: '100vh',
-    backgroundColor: 'rgba(0, 0, 0, 0.45)',
-    backdropFilter: 'blur(4px)',
+    backgroundColor: 'rgba(16, 22, 21, 0.5)',
+    backdropFilter: 'blur(8px)',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
@@ -279,7 +281,7 @@ const styles = {
     width: '560px',
     maxWidth: '90%',
     maxHeight: '85vh',
-    borderRadius: '20px',
+    borderRadius: '8px',
     display: 'flex',
     flexDirection: 'column',
     overflow: 'hidden',
@@ -304,11 +306,8 @@ const styles = {
     justifyContent: 'center',
     padding: '6px',
     borderRadius: '8px',
+    border: '1px solid transparent',
     transition: 'var(--transition-normal)',
-    ':hover': {
-      backgroundColor: 'hsla(0, 0%, 50%, 0.1)',
-      color: 'var(--text-main)',
-    }
   },
   body: {
     padding: '24px',
@@ -339,13 +338,10 @@ const styles = {
     alignItems: 'center',
     gap: '16px',
     padding: '14px 18px',
-    borderRadius: '12px',
+    borderRadius: '8px',
     border: '1px solid',
     textAlign: 'left',
     transition: 'var(--transition-normal)',
-    ':hover': {
-      transform: 'translateY(-1px)',
-    }
   },
   modeMeta: {
     display: 'flex',
@@ -378,40 +374,34 @@ const styles = {
   input: {
     width: '100%',
     padding: '12px 14px',
-    borderRadius: '10px',
+    borderRadius: '8px',
     border: '1px solid var(--border-color)',
     backgroundColor: 'var(--bg-input)',
     color: 'var(--text-main)',
     outline: 'none',
     fontSize: '14px',
     transition: 'var(--transition-normal)',
-    ':focus': {
-      borderColor: 'var(--accent-color)',
-    }
   },
   saveBtn: {
     padding: '12px',
-    borderRadius: '10px',
+    borderRadius: '8px',
     backgroundColor: 'var(--accent-color)',
-    color: 'white',
+    color: 'hsl(42, 55%, 96%)',
     fontSize: '14px',
     fontWeight: '700',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
     gap: '8px',
-    boxShadow: '0 4px 12px hsla(255, 85%, 65%, 0.2)',
-    ':hover': {
-      backgroundColor: 'var(--accent-hover)',
-    }
+    boxShadow: '0 10px 24px var(--accent-glow)',
   },
   infoBlock: {
     display: 'flex',
     gap: '12px',
     padding: '14px',
-    borderRadius: '12px',
-    backgroundColor: 'rgba(77, 171, 247, 0.08)',
-    border: '1px solid rgba(77, 171, 247, 0.2)',
+    borderRadius: '8px',
+    backgroundColor: 'hsla(var(--mood-tough), 0.09)',
+    border: '1px solid hsla(var(--mood-tough), 0.22)',
     color: 'var(--text-main)',
   },
   infoText: {
@@ -421,7 +411,7 @@ const styles = {
   sqlSection: {
     marginTop: '6px',
     border: '1px solid var(--border-color)',
-    borderRadius: '12px',
+    borderRadius: '8px',
     overflow: 'hidden',
   },
   sqlHeader: {
@@ -447,9 +437,6 @@ const styles = {
     fontSize: '11px',
     color: 'var(--text-main)',
     fontWeight: '600',
-    ':hover': {
-      backgroundColor: 'hsla(0, 0%, 50%, 0.08)',
-    }
   },
   sqlCode: {
     padding: '14px',
@@ -473,17 +460,13 @@ const styles = {
     justifyContent: 'center',
     gap: '8px',
     padding: '12px',
-    borderRadius: '10px',
+    borderRadius: '8px',
     border: '1px solid var(--border-color)',
     color: 'var(--text-main)',
     fontSize: '13.5px',
     fontWeight: '600',
     minWidth: '200px',
     transition: 'var(--transition-normal)',
-    ':hover': {
-      backgroundColor: 'hsla(0, 0%, 50%, 0.08)',
-      borderColor: 'var(--border-color-hover)',
-    }
   },
   importWrapper: {
     flex: 1,
@@ -497,23 +480,19 @@ const styles = {
     justifyContent: 'center',
     gap: '8px',
     padding: '12px',
-    borderRadius: '10px',
+    borderRadius: '8px',
     border: '1px solid var(--border-color)',
     color: 'var(--text-main)',
     fontSize: '13.5px',
     fontWeight: '600',
     cursor: 'pointer',
     transition: 'var(--transition-normal)',
-    ':hover': {
-      backgroundColor: 'hsla(0, 0%, 50%, 0.08)',
-      borderColor: 'var(--border-color-hover)',
-    }
   },
   importSuccessMsg: {
     display: 'flex',
     alignItems: 'center',
     gap: '8px',
-    color: '#4dabf7',
+    color: 'hsl(var(--mood-tough))',
     fontSize: '13px',
     fontWeight: '600',
     padding: '2px 4px',
@@ -522,7 +501,7 @@ const styles = {
     display: 'flex',
     alignItems: 'center',
     gap: '8px',
-    color: '#ff6b6b',
+    color: 'var(--danger)',
     fontSize: '13px',
     fontWeight: '600',
     padding: '2px 4px',

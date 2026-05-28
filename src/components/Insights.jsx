@@ -1,5 +1,4 @@
-import React from 'react';
-import { Sparkles, Calendar, Heart, Award, Flame, Smile, BarChart2 } from 'lucide-react';
+import { Calendar, Heart, Award, Flame, BarChart2 } from 'lucide-react';
 
 export default function Insights({ entries }) {
   
@@ -17,12 +16,10 @@ export default function Insights({ entries }) {
       .filter((value, index, self) => self.indexOf(value) === index)
       .map(d => new Date(d));
     
-    let streak = 0;
     let current = new Date();
     current.setHours(0,0,0,0);
     
     // Check if the user wrote today or yesterday to continue streak
-    let lastRecordedIndex = -1;
     const todayStr = current.toDateString();
     
     const yesterday = new Date(current);
@@ -30,16 +27,16 @@ export default function Insights({ entries }) {
     const yesterdayStr = yesterday.toDateString();
 
     const datesStrings = dates.map(d => d.toDateString());
-    
-    if (datesStrings.includes(todayStr)) {
-      lastRecordedIndex = datesStrings.indexOf(todayStr);
-    } else if (datesStrings.includes(yesterdayStr)) {
-      lastRecordedIndex = datesStrings.indexOf(yesterdayStr);
-    } else {
+
+    const lastRecordedIndex = datesStrings.includes(todayStr)
+      ? datesStrings.indexOf(todayStr)
+      : datesStrings.indexOf(yesterdayStr);
+
+    if (lastRecordedIndex === -1) {
       return 0; // Streak broken
     }
 
-    streak = 1;
+    let streak = 1;
     let expectedDate = new Date(dates[lastRecordedIndex]);
     
     for (let i = lastRecordedIndex + 1; i < dates.length; i++) {
@@ -65,10 +62,10 @@ export default function Insights({ entries }) {
   });
 
   const moodsInfo = {
-    0: { icon: '❤️', label: 'Good', color: 'hsl(0, 100%, 68%)', bg: 'rgba(255, 107, 107, 0.2)' },
-    1: { icon: '👋', label: 'Okay', color: 'hsl(38, 100%, 60%)', bg: 'rgba(252, 196, 25, 0.2)' },
-    2: { icon: '❤️‍🩹', label: 'Tough', color: 'hsl(205, 100%, 62%)', bg: 'rgba(77, 171, 247, 0.2)' },
-    3: { icon: '❓', label: 'Question', color: 'hsl(265, 90%, 70%)', bg: 'rgba(177, 151, 252, 0.2)' },
+    0: { icon: '❤️', label: 'Good', color: 'hsl(var(--mood-good))', bg: 'hsla(var(--mood-good), 0.18)' },
+    1: { icon: '👋', label: 'Okay', color: 'hsl(var(--mood-okay))', bg: 'hsla(var(--mood-okay), 0.18)' },
+    2: { icon: '❤️‍🩹', label: 'Tough', color: 'hsl(var(--mood-tough))', bg: 'hsla(var(--mood-tough), 0.18)' },
+    3: { icon: '❓', label: 'Question', color: 'hsl(var(--mood-question))', bg: 'hsla(var(--mood-question), 0.18)' },
   };
 
   // Get percentage
@@ -121,9 +118,9 @@ export default function Insights({ entries }) {
     <div style={styles.container} className="animate-fade-in">
       {/* Streaks and Summary Stats Row */}
       <div style={styles.statsGrid}>
-        <div style={styles.statCard} className="glass">
-          <div style={{ ...styles.statIconBadge, backgroundColor: 'rgba(255, 107, 107, 0.12)', color: '#ff6b6b' }}>
-            <Flame size={20} fill={streak > 0 ? '#ff6b6b' : 'none'} />
+        <div style={styles.statCard} className="glass stat-card">
+          <div style={{ ...styles.statIconBadge, backgroundColor: 'hsla(var(--mood-good), 0.12)', color: 'hsl(var(--mood-good))' }}>
+            <Flame size={20} fill={streak > 0 ? 'hsl(var(--mood-good))' : 'none'} />
           </div>
           <div style={styles.statMeta}>
             <span style={styles.statVal}>{streak} {streak === 1 ? 'day' : 'days'}</span>
@@ -131,8 +128,8 @@ export default function Insights({ entries }) {
           </div>
         </div>
 
-        <div style={styles.statCard} className="glass">
-          <div style={{ ...styles.statIconBadge, backgroundColor: 'rgba(255, 255, 255, 0.08)', color: 'white' }}>
+        <div style={styles.statCard} className="glass stat-card">
+          <div style={{ ...styles.statIconBadge, backgroundColor: 'hsla(var(--mood-question), 0.12)', color: 'var(--accent-color)' }}>
             <Award size={20} />
           </div>
           <div style={styles.statMeta}>
@@ -141,9 +138,9 @@ export default function Insights({ entries }) {
           </div>
         </div>
 
-        <div style={styles.statCard} className="glass">
-          <div style={{ ...styles.statIconBadge, backgroundColor: 'rgba(252, 196, 25, 0.12)', color: '#fcc419' }}>
-            <Heart size={20} fill={favoriteCount > 0 ? '#fcc419' : 'none'} />
+        <div style={styles.statCard} className="glass stat-card">
+          <div style={{ ...styles.statIconBadge, backgroundColor: 'hsla(var(--mood-okay), 0.14)', color: 'var(--brass)' }}>
+            <Heart size={20} fill={favoriteCount > 0 ? 'var(--brass)' : 'none'} />
           </div>
           <div style={styles.statMeta}>
             <span style={styles.statVal}>{favoriteCount}</span>
@@ -154,7 +151,7 @@ export default function Insights({ entries }) {
 
       <div style={styles.analyticsSection}>
         {/* Mood Distribution */}
-        <div style={{ ...styles.analyticCard, flex: 1.2 }} className="glass">
+        <div style={{ ...styles.analyticCard, flex: 1.2 }} className="glass analytic-card">
           <h3 style={styles.cardTitle}>
             <BarChart2 size={18} color="var(--accent-color)" />
             <span>Mood Distribution</span>
@@ -214,7 +211,7 @@ export default function Insights({ entries }) {
         </div>
 
         {/* Weekly Mood Grid */}
-        <div style={{ ...styles.analyticCard, flex: 1 }} className="glass">
+        <div style={{ ...styles.analyticCard, flex: 1 }} className="glass analytic-card">
           <h3 style={styles.cardTitle}>
             <Calendar size={18} color="var(--accent-color)" />
             <span>Weekly Flow</span>
@@ -232,7 +229,7 @@ export default function Insights({ entries }) {
                   style={{
                     ...styles.flowDay,
                     borderColor: day.isToday ? 'var(--accent-color)' : 'var(--border-color)',
-                    backgroundColor: day.isToday ? 'rgba(170, 59, 255, 0.04)' : 'transparent',
+                    backgroundColor: day.isToday ? 'hsla(var(--mood-question), 0.08)' : 'transparent',
                   }}
                 >
                   <span style={styles.flowDayName}>{day.name}</span>
@@ -240,7 +237,7 @@ export default function Insights({ entries }) {
                     style={{
                       ...styles.flowDot,
                       backgroundColor: info ? info.color : 'var(--border-color)',
-                      boxShadow: info ? `0 0 10px ${info.color}66` : 'none',
+                      boxShadow: info ? '0 0 0 3px var(--bg-card)' : 'none',
                     }}
                     title={info ? `Primary mood: ${info.label}` : 'No entries'}
                   >
@@ -259,7 +256,7 @@ export default function Insights({ entries }) {
 
 const styles = {
   container: {
-    padding: '32px',
+    padding: '32px 36px 36px',
     display: 'flex',
     flexDirection: 'column',
     gap: '28px',
@@ -273,7 +270,7 @@ const styles = {
   },
   statCard: {
     padding: '20px',
-    borderRadius: '16px',
+    borderRadius: '8px',
     display: 'flex',
     alignItems: 'center',
     gap: '16px',
@@ -282,7 +279,7 @@ const styles = {
   statIconBadge: {
     width: '46px',
     height: '46px',
-    borderRadius: '12px',
+    borderRadius: '8px',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
@@ -313,7 +310,7 @@ const styles = {
   },
   analyticCard: {
     padding: '24px',
-    borderRadius: '20px',
+    borderRadius: '8px',
     border: '1px solid var(--border-color)',
     display: 'flex',
     flexDirection: 'column',
@@ -343,7 +340,7 @@ const styles = {
   segmentedBar: {
     width: '100%',
     height: '16px',
-    borderRadius: '99px',
+    borderRadius: '999px',
     overflow: 'hidden',
     display: 'flex',
     backgroundColor: 'var(--border-color)',
@@ -358,7 +355,7 @@ const styles = {
     alignItems: 'center',
     gap: '12px',
     padding: '10px 14px',
-    borderRadius: '10px',
+    borderRadius: '8px',
     border: '1px solid var(--border-color)',
     backgroundColor: 'var(--bg-input)',
   },
@@ -402,7 +399,7 @@ const styles = {
     alignItems: 'center',
     gap: '8px',
     padding: '10px 4px',
-    borderRadius: '10px',
+    borderRadius: '8px',
     border: '1px solid',
   },
   flowDayName: {

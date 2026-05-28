@@ -1,15 +1,17 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { db } from '../services/db';
-import { Shield, Sparkles, AlertCircle, Eye, EyeOff, Loader2, ArrowRight, HardDrive, Cloud, Key, Server, Database, HelpCircle, ArrowLeft, CheckCircle } from 'lucide-react';
+import { Shield, Feather, AlertCircle, Eye, EyeOff, Loader2, ArrowRight, HardDrive, Cloud, HelpCircle, ArrowLeft, CheckCircle } from 'lucide-react';
 
 export default function Login({ onAuthSuccess, onBypassAuth }) {
+  const initialCredentials = db.getCredentials();
+
   // Onboarding Steps: 'choose' | 'setup' | 'auth'
-  const [step, setStep] = useState('choose');
+  const [step, setStep] = useState(initialCredentials.url && initialCredentials.key ? 'auth' : 'choose');
   const [isSignUp, setIsSignUp] = useState(false);
   
   // Database Config State
-  const [supabaseUrl, setSupabaseUrl] = useState('');
-  const [supabaseKey, setSupabaseKey] = useState('');
+  const [supabaseUrl, setSupabaseUrl] = useState(initialCredentials.url);
+  const [supabaseKey, setSupabaseKey] = useState(initialCredentials.key);
   
   // Auth Form State
   const [email, setEmail] = useState('');
@@ -24,17 +26,6 @@ export default function Login({ onAuthSuccess, onBypassAuth }) {
   // UI Helpers
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
   const [showHelp, setShowHelp] = useState(false);
-
-  // Load existing credentials if any
-  useEffect(() => {
-    const creds = db.getCredentials();
-    if (creds.url && creds.key) {
-      setSupabaseUrl(creds.url);
-      setSupabaseKey(creds.key);
-      // If credentials already exist, skip to the auth step directly!
-      setStep('auth');
-    }
-  }, []);
 
   // Handle ambient glow tracking mouse movement
   useEffect(() => {
@@ -124,7 +115,7 @@ export default function Login({ onAuthSuccess, onBypassAuth }) {
           <div style={styles.chooseCard} className="glass">
             <div style={styles.logoSection}>
               <div style={styles.logoBadge} className="pulse-logo">
-                <Sparkles size={32} color="white" />
+                <Feather size={30} />
               </div>
               <h1 style={styles.title}>Welcome to Blip</h1>
               <p style={styles.subtitle}>Choose how you would like to store your daily thoughts</p>
@@ -133,7 +124,7 @@ export default function Login({ onAuthSuccess, onBypassAuth }) {
             <div style={styles.optionsContainer}>
               {/* Option A: Offline */}
               <button onClick={handleOfflineBypass} style={styles.optionBtn} className="glass-interactive">
-                <div style={{ ...styles.optionIconBadge, backgroundColor: 'rgba(156, 163, 175, 0.12)', color: 'var(--text-main)' }}>
+                <div style={{ ...styles.optionIconBadge, backgroundColor: 'hsla(196, 18%, 28%, 0.1)', color: 'var(--text-main)' }}>
                   <HardDrive size={24} />
                 </div>
                 <div style={styles.optionMeta}>
@@ -147,7 +138,7 @@ export default function Login({ onAuthSuccess, onBypassAuth }) {
 
               {/* Option B: Cloud Sync */}
               <button onClick={() => setStep('setup')} style={styles.optionBtn} className="glass-interactive">
-                <div style={{ ...styles.optionIconBadge, backgroundColor: 'rgba(170, 59, 255, 0.12)', color: 'var(--accent-color)' }}>
+                <div style={{ ...styles.optionIconBadge, backgroundColor: 'hsla(var(--mood-question), 0.12)', color: 'var(--accent-color)' }}>
                   <Cloud size={24} />
                 </div>
                 <div style={styles.optionMeta}>
@@ -166,7 +157,7 @@ export default function Login({ onAuthSuccess, onBypassAuth }) {
         {step === 'setup' && (
           <div style={styles.formCard} className="glass">
             <div style={styles.backHeader}>
-              <button onClick={() => setStep('choose')} style={styles.backBtn}>
+              <button onClick={() => setStep('choose')} style={styles.backBtn} className="quiet-button">
                 <ArrowLeft size={16} />
                 <span>Back</span>
               </button>
@@ -210,7 +201,7 @@ export default function Login({ onAuthSuccess, onBypassAuth }) {
                 />
               </div>
 
-              <button type="submit" style={styles.submitBtn}>
+              <button type="submit" style={styles.submitBtn} className="primary-button">
                 <span>Connect Database & Continue</span>
                 <ArrowRight size={16} />
               </button>
@@ -222,6 +213,7 @@ export default function Login({ onAuthSuccess, onBypassAuth }) {
                 type="button" 
                 onClick={() => setShowHelp(!showHelp)} 
                 style={styles.helpAccordionToggle}
+                className="quiet-button"
               >
                 <HelpCircle size={16} color="var(--accent-color)" />
                 <span>How do I get these credentials?</span>
@@ -252,6 +244,7 @@ export default function Login({ onAuthSuccess, onBypassAuth }) {
                   setStep('setup');
                 }} 
                 style={styles.backBtn}
+                className="quiet-button"
               >
                 <ArrowLeft size={16} />
                 <span>Edit Database Keys</span>
@@ -261,7 +254,7 @@ export default function Login({ onAuthSuccess, onBypassAuth }) {
 
             <div style={styles.formHeader}>
               <div style={styles.connectionConfirmBadge}>
-                <CheckCircle size={14} color="#4dabf7" />
+                <CheckCircle size={14} color="hsl(var(--mood-tough))" />
                 <span>Connected to {getProjectName()}</span>
               </div>
               <h2 style={styles.sectionTitleHeader}>{isSignUp ? 'Create your Journal Account' : 'Sign In to your Journal'}</h2>
@@ -314,13 +307,14 @@ export default function Login({ onAuthSuccess, onBypassAuth }) {
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
                     style={styles.eyeBtn}
+                    className="icon-button"
                   >
                     {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                   </button>
                 </div>
               </div>
 
-              <button type="submit" disabled={loading} style={styles.submitBtn}>
+              <button type="submit" disabled={loading} style={styles.submitBtn} className="primary-button">
                 {loading ? (
                   <Loader2 size={18} style={styles.spinner} />
                 ) : (
@@ -341,11 +335,12 @@ export default function Login({ onAuthSuccess, onBypassAuth }) {
                   setSuccessMsg('');
                 }}
                 style={styles.toggleBtn}
+                className="quiet-button"
               >
                 {isSignUp ? 'Already have an account? Sign In' : "Don't have an account? Sign Up"}
               </button>
               
-              <div style={styles.divider}>or</div>
+              <div style={styles.divider} className="divider-line">or</div>
 
               <button 
                 type="button"
@@ -356,6 +351,7 @@ export default function Login({ onAuthSuccess, onBypassAuth }) {
                   setStep('choose');
                 }} 
                 style={styles.offlineBtn}
+                className="quiet-button"
               >
                 Work Offline Instead
               </button>
@@ -379,6 +375,8 @@ const styles = {
     overflowY: 'auto',
     zIndex: 1,
     padding: '40px 20px',
+    backgroundImage: 'linear-gradient(90deg, hsla(38, 26%, 24%, 0.035) 1px, transparent 1px), linear-gradient(hsla(38, 26%, 24%, 0.03) 1px, transparent 1px)',
+    backgroundSize: '34px 34px',
   },
   contentWrapper: {
     display: 'flex',
@@ -391,7 +389,7 @@ const styles = {
   chooseCard: {
     width: '100%',
     padding: '44px 40px',
-    borderRadius: '24px',
+    borderRadius: '8px',
     display: 'flex',
     flexDirection: 'column',
     gap: '36px',
@@ -400,7 +398,7 @@ const styles = {
     width: '460px',
     maxWidth: '100%',
     padding: '36px 32px',
-    borderRadius: '24px',
+    borderRadius: '8px',
     display: 'flex',
     flexDirection: 'column',
     gap: '24px',
@@ -415,22 +413,21 @@ const styles = {
   logoBadge: {
     width: '64px',
     height: '64px',
-    borderRadius: '18px',
-    background: 'linear-gradient(135deg, hsl(255, 85%, 65%) 0%, hsl(205, 100%, 62%) 100%)',
+    borderRadius: '8px',
+    background: 'linear-gradient(135deg, var(--brass), var(--accent-color))',
+    color: 'hsl(196, 31%, 9%)',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    boxShadow: '0 8px 24px hsla(255, 85%, 65%, 0.4)',
+    boxShadow: '0 12px 30px hsla(42, 62%, 48%, 0.24)',
     marginBottom: '8px',
   },
   title: {
-    fontSize: '36px',
-    fontWeight: '800',
+    fontSize: '40px',
+    fontWeight: '650',
     fontFamily: 'var(--font-title)',
-    background: 'linear-gradient(to right, #ffffff, #dcdcdc)',
-    WebkitBackgroundClip: 'text',
-    WebkitTextFillColor: 'transparent',
-    letterSpacing: '-0.02em',
+    letterSpacing: '0',
+    color: 'var(--text-heading)',
   },
   subtitle: {
     fontSize: '15px',
@@ -448,7 +445,7 @@ const styles = {
     alignItems: 'center',
     gap: '20px',
     padding: '20px 24px',
-    borderRadius: '16px',
+    borderRadius: '8px',
     backgroundColor: 'var(--bg-card)',
     border: '1px solid var(--border-color)',
     textAlign: 'left',
@@ -458,7 +455,7 @@ const styles = {
   optionIconBadge: {
     width: '52px',
     height: '52px',
-    borderRadius: '12px',
+    borderRadius: '8px',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
@@ -502,10 +499,7 @@ const styles = {
     fontWeight: '600',
     padding: '4px 8px',
     borderRadius: '6px',
-    ':hover': {
-      color: 'var(--text-main)',
-      backgroundColor: 'hsla(0, 0%, 50%, 0.08)',
-    }
+    border: '1px solid transparent',
   },
   stepIndicator: {
     fontSize: '12px',
@@ -534,9 +528,9 @@ const styles = {
     gap: '6px',
     padding: '4px 8px',
     borderRadius: '6px',
-    backgroundColor: 'rgba(77, 171, 247, 0.08)',
-    border: '1px solid rgba(77, 171, 247, 0.2)',
-    color: '#4dabf7',
+    backgroundColor: 'hsla(var(--mood-tough), 0.09)',
+    border: '1px solid hsla(var(--mood-tough), 0.24)',
+    color: 'hsl(var(--mood-tough))',
     fontSize: '11.5px',
     fontWeight: '700',
     textTransform: 'uppercase',
@@ -564,17 +558,13 @@ const styles = {
   input: {
     width: '100%',
     padding: '14px 16px',
-    borderRadius: '12px',
+    borderRadius: '8px',
     border: '1px solid var(--border-color)',
     backgroundColor: 'var(--bg-input)',
     color: 'var(--text-main)',
     outline: 'none',
     transition: 'var(--transition-normal)',
     fontSize: '14.5px',
-    ':focus': {
-      borderColor: 'var(--accent-color)',
-      boxShadow: '0 0 0 3px var(--accent-glow)',
-    }
   },
   passwordWrapper: {
     position: 'relative',
@@ -584,17 +574,13 @@ const styles = {
   passwordInput: {
     width: '100%',
     padding: '14px 44px 14px 16px',
-    borderRadius: '12px',
+    borderRadius: '8px',
     border: '1px solid var(--border-color)',
     backgroundColor: 'var(--bg-input)',
     color: 'var(--text-main)',
     outline: 'none',
     transition: 'var(--transition-normal)',
     fontSize: '14.5px',
-    ':focus': {
-      borderColor: 'var(--accent-color)',
-      boxShadow: '0 0 0 3px var(--accent-glow)',
-    }
   },
   eyeBtn: {
     position: 'absolute',
@@ -605,23 +591,21 @@ const styles = {
     justifyContent: 'center',
     padding: '4px',
     borderRadius: '6px',
-    ':hover': {
-      color: 'var(--text-main)',
-    }
+    border: '1px solid transparent',
   },
   submitBtn: {
     width: '100%',
     padding: '14px',
-    borderRadius: '12px',
-    background: 'linear-gradient(135deg, hsl(255, 85%, 65%) 0%, hsl(240, 75%, 60%) 100%)',
-    color: 'white',
+    borderRadius: '8px',
+    background: 'var(--accent-color)',
+    color: 'hsl(42, 55%, 96%)',
     fontSize: '15px',
     fontWeight: '600',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
     gap: '8px',
-    boxShadow: '0 4px 16px hsla(255, 85%, 65%, 0.3)',
+    boxShadow: '0 10px 24px var(--accent-glow)',
     marginTop: '6px',
   },
   spinner: {
@@ -646,7 +630,7 @@ const styles = {
     marginTop: '10px',
     padding: '12px',
     backgroundColor: 'var(--bg-input)',
-    borderRadius: '10px',
+    borderRadius: '8px',
     border: '1px solid var(--border-color)',
   },
   helpList: {
@@ -670,8 +654,8 @@ const styles = {
     padding: '12px 16px',
     backgroundColor: 'rgba(255, 107, 107, 0.12)',
     border: '1px solid rgba(255, 107, 107, 0.3)',
-    borderRadius: '12px',
-    color: '#ff6b6b',
+    borderRadius: '8px',
+    color: 'var(--danger)',
     fontSize: '13.2px',
     lineHeight: '1.4',
   },
@@ -682,8 +666,8 @@ const styles = {
     padding: '12px 16px',
     backgroundColor: 'rgba(77, 171, 247, 0.12)',
     border: '1px solid rgba(77, 171, 247, 0.3)',
-    borderRadius: '12px',
-    color: '#4dabf7',
+    borderRadius: '8px',
+    color: 'hsl(var(--mood-tough))',
     fontSize: '13.2px',
     lineHeight: '1.4',
   },
@@ -698,10 +682,9 @@ const styles = {
     color: 'var(--text-main)',
     fontSize: '13.5px',
     opacity: 0.85,
-    ':hover': {
-      opacity: 1,
-      textDecoration: 'underline',
-    }
+    border: '1px solid transparent',
+    padding: '4px 8px',
+    borderRadius: '6px',
   },
   divider: {
     fontSize: '12px',
@@ -713,27 +696,13 @@ const styles = {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    ':before': {
-      content: '""',
-      flex: 1,
-      height: '1px',
-      backgroundColor: 'var(--border-color)',
-      marginRight: '12px',
-    },
-    ':after': {
-      content: '""',
-      flex: 1,
-      height: '1px',
-      backgroundColor: 'var(--border-color)',
-      marginLeft: '12px',
-    }
   },
   offlineBtn: {
     color: 'var(--text-muted)',
     fontSize: '13.5px',
     fontWeight: '600',
-    ':hover': {
-      color: 'var(--text-main)',
-    }
+    border: '1px solid transparent',
+    padding: '4px 8px',
+    borderRadius: '6px',
   }
 };

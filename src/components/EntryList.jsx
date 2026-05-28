@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { Heart, Star, Trash2, Edit2, Check, X, Calendar, MessageSquare } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { Star, Trash2, Edit2, Check, X, MessageSquare } from 'lucide-react';
 
 export default function EntryList({ entries, onUpdate, onDelete, onToggleFavorite }) {
   const [editingId, setEditingId] = useState(null);
@@ -12,7 +12,8 @@ export default function EntryList({ entries, onUpdate, onDelete, onToggleFavorit
 
   // Reset pagination when entries change (e.g. interval, date, favorites)
   useEffect(() => {
-    setVisibleCount(15);
+    const resetTimer = window.setTimeout(() => setVisibleCount(15), 0);
+    return () => window.clearTimeout(resetTimer);
   }, [entries]);
 
   // Infinite Scroll IntersectionObserver
@@ -43,10 +44,10 @@ export default function EntryList({ entries, onUpdate, onDelete, onToggleFavorit
   }, [entries.length, visibleCount]);
 
   const moods = {
-    0: { icon: '❤️', label: 'Good', border: 'hsl(0, 100%, 68%)', bg: 'rgba(255, 107, 107, 0.04)' },
-    1: { icon: '👋', label: 'Okay', border: 'hsl(38, 100%, 60%)', bg: 'rgba(252, 196, 25, 0.04)' },
-    2: { icon: '❤️‍🩹', label: 'Tough', border: 'hsl(205, 100%, 62%)', bg: 'rgba(77, 171, 247, 0.04)' },
-    3: { icon: '❓', label: 'Question', border: 'hsl(265, 90%, 70%)', bg: 'rgba(177, 151, 252, 0.04)' },
+    0: { icon: '❤️', label: 'Good', border: 'hsl(var(--mood-good))', bg: 'hsla(var(--mood-good), 0.08)' },
+    1: { icon: '👋', label: 'Okay', border: 'hsl(var(--mood-okay))', bg: 'hsla(var(--mood-okay), 0.09)' },
+    2: { icon: '❤️‍🩹', label: 'Tough', border: 'hsl(var(--mood-tough))', bg: 'hsla(var(--mood-tough), 0.09)' },
+    3: { icon: '❓', label: 'Question', border: 'hsl(var(--mood-question))', bg: 'hsla(var(--mood-question), 0.09)' },
   };
 
   const handleStartEdit = (entry) => {
@@ -111,7 +112,7 @@ export default function EntryList({ entries, onUpdate, onDelete, onToggleFavorit
               borderLeftColor: moodInfo.border,
               backgroundColor: isEditing ? 'var(--bg-input)' : 'var(--bg-card)',
             }}
-            className="glass animate-fade-in"
+            className="glass animate-fade-in entry-card"
           >
             {isEditing ? (
               // Editing Card View
@@ -134,6 +135,7 @@ export default function EntryList({ entries, onUpdate, onDelete, onToggleFavorit
                             borderColor: isMoodActive ? m.border : 'transparent',
                             backgroundColor: isMoodActive ? m.bg : 'transparent',
                           }}
+                          className="quiet-button"
                         >
                           <span>{m.icon}</span>
                         </button>
@@ -150,11 +152,11 @@ export default function EntryList({ entries, onUpdate, onDelete, onToggleFavorit
                 />
 
                 <div style={styles.editActions}>
-                  <button onClick={handleCancelEdit} style={styles.cancelBtn}>
+                  <button onClick={handleCancelEdit} style={styles.cancelBtn} className="quiet-button">
                     <X size={14} />
                     <span>Cancel</span>
                   </button>
-                  <button onClick={() => handleSaveEdit(entry.id)} style={styles.saveBtn} disabled={!editText.trim()}>
+                  <button onClick={() => handleSaveEdit(entry.id)} style={styles.saveBtn} className="primary-button" disabled={!editText.trim()}>
                     <Check size={14} />
                     <span>Save Changes</span>
                   </button>
@@ -170,7 +172,7 @@ export default function EntryList({ entries, onUpdate, onDelete, onToggleFavorit
                         ...styles.moodIndicator,
                         color: moodInfo.border,
                         backgroundColor: moodInfo.bg,
-                        borderColor: `${moodInfo.border}22`
+                        borderColor: moodInfo.border
                       }}
                     >
                       <span style={styles.moodIcon}>{moodInfo.icon}</span>
@@ -187,17 +189,19 @@ export default function EntryList({ entries, onUpdate, onDelete, onToggleFavorit
                       onClick={() => onToggleFavorite(entry.id)}
                       style={{
                         ...styles.cardActionBtn,
-                        color: entry.isFavorite ? '#fcc419' : 'var(--text-muted)',
+                        color: entry.isFavorite ? 'var(--brass)' : 'var(--text-muted)',
                       }}
+                      className="card-action"
                       data-tooltip={entry.isFavorite ? 'Unfavorite' : 'Favorite'}
                     >
-                      <Star size={16} fill={entry.isFavorite ? '#fcc419' : 'none'} />
+                      <Star size={16} fill={entry.isFavorite ? 'var(--brass)' : 'none'} />
                     </button>
 
                     {/* Edit button */}
                     <button
                       onClick={() => handleStartEdit(entry)}
                       style={styles.cardActionBtn}
+                      className="card-action"
                       data-tooltip="Edit entry"
                     >
                       <Edit2 size={15} />
@@ -207,6 +211,7 @@ export default function EntryList({ entries, onUpdate, onDelete, onToggleFavorit
                     <button
                       onClick={() => onDelete(entry.id)}
                       style={styles.cardActionBtnDelete}
+                      className="danger-button"
                       data-tooltip="Delete entry"
                     >
                       <Trash2 size={15} />
@@ -240,26 +245,22 @@ export default function EntryList({ entries, onUpdate, onDelete, onToggleFavorit
 
 const styles = {
   listContainer: {
-    padding: '12px 32px 32px 32px',
+    padding: '12px 36px 36px',
     display: 'flex',
     flexDirection: 'column',
-    gap: '16px',
+    gap: '14px',
     overflowY: 'auto',
     flex: 1,
   },
   card: {
-    borderRadius: '14px',
-    borderLeftWidth: '5px',
+    borderRadius: '8px',
+    borderLeftWidth: '4px',
     borderLeftStyle: 'solid',
     transition: 'var(--transition-normal)',
-    ':hover': {
-      transform: 'translateY(-2px)',
-      boxShadow: 'var(--shadow-md)',
-      borderColor: 'var(--border-color-hover)',
-    }
+    overflow: 'hidden',
   },
   cardContent: {
-    padding: '18px 20px',
+    padding: '18px 20px 20px',
     display: 'flex',
     flexDirection: 'column',
     gap: '12px',
@@ -280,7 +281,7 @@ const styles = {
     alignItems: 'center',
     gap: '6px',
     padding: '4px 8px',
-    borderRadius: '6px',
+    borderRadius: '999px',
     fontSize: '12.5px',
     fontWeight: '700',
     border: '1px solid',
@@ -291,7 +292,7 @@ const styles = {
   moodLabel: {
     fontSize: '12px',
     textTransform: 'uppercase',
-    letterSpacing: '0.03em',
+    letterSpacing: '0.06em',
   },
   timeLabel: {
     fontSize: '12.5px',
@@ -313,11 +314,6 @@ const styles = {
     color: 'var(--text-muted)',
     border: '1px solid transparent',
     transition: 'var(--transition-normal)',
-    ':hover': {
-      backgroundColor: 'hsla(0, 0%, 50%, 0.1)',
-      color: 'var(--text-main)',
-      borderColor: 'var(--border-color)',
-    }
   },
   cardActionBtnDelete: {
     width: '30px',
@@ -329,21 +325,17 @@ const styles = {
     color: 'var(--text-muted)',
     border: '1px solid transparent',
     transition: 'var(--transition-normal)',
-    ':hover': {
-      backgroundColor: 'rgba(255, 107, 107, 0.1)',
-      color: '#ff6b6b',
-      borderColor: 'rgba(255, 107, 107, 0.2)',
-    }
   },
   cardBody: {
     cursor: 'pointer',
     padding: '2px 0',
   },
   entryText: {
-    fontSize: '15px',
-    lineHeight: '1.6',
+    fontSize: '17px',
+    lineHeight: '1.64',
     color: 'var(--text-main)',
     whiteSpace: 'pre-wrap',
+    fontFamily: 'var(--font-journal)',
   },
   emptyState: {
     display: 'flex',
@@ -359,7 +351,7 @@ const styles = {
     width: '80px',
     height: '80px',
     borderRadius: '24px',
-    background: 'linear-gradient(135deg, hsla(255, 85%, 65%, 0.08) 0%, hsla(205, 100%, 62%, 0.08) 100%)',
+    background: 'linear-gradient(135deg, hsla(var(--mood-question), 0.1), hsla(var(--mood-okay), 0.12))',
     border: '1px solid var(--border-color)',
     display: 'flex',
     alignItems: 'center',
@@ -409,10 +401,6 @@ const styles = {
     justifyContent: 'center',
     fontSize: '13px',
     transition: 'var(--transition-normal)',
-    ':hover': {
-      backgroundColor: 'hsla(0, 0%, 50%, 0.08)',
-      transform: 'scale(1.05)',
-    }
   },
   editTextarea: {
     width: '100%',
@@ -420,13 +408,13 @@ const styles = {
     padding: '12px',
     borderRadius: '8px',
     border: '1px solid var(--border-color)',
-    backgroundColor: 'var(--bg-app)',
+    backgroundColor: 'var(--bg-card)',
     color: 'var(--text-main)',
-    fontSize: '14.5px',
-    lineHeight: '1.5',
+    fontSize: '16px',
+    lineHeight: '1.6',
     outline: 'none',
     resize: 'vertical',
-    fontFamily: 'var(--font-sans)',
+    fontFamily: 'var(--font-journal)',
   },
   editActions: {
     display: 'flex',
@@ -443,9 +431,6 @@ const styles = {
     color: 'var(--text-muted)',
     fontSize: '13px',
     fontWeight: '600',
-    ':hover': {
-      backgroundColor: 'hsla(0, 0%, 50%, 0.08)',
-    }
   },
   saveBtn: {
     display: 'flex',
@@ -454,13 +439,10 @@ const styles = {
     padding: '7px 14px',
     borderRadius: '6px',
     backgroundColor: 'var(--accent-color)',
-    color: 'white',
+    color: 'hsl(42, 55%, 96%)',
     fontSize: '13px',
     fontWeight: '600',
-    boxShadow: '0 2px 8px hsla(255, 85%, 65%, 0.2)',
-    ':hover': {
-      backgroundColor: 'var(--accent-hover)',
-    }
+    boxShadow: '0 8px 20px var(--accent-glow)',
   },
   loadingMore: {
     display: 'flex',

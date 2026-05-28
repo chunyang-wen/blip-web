@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { db } from './services/db';
 import Sidebar from './components/Sidebar';
 import Header from './components/Header';
@@ -25,8 +25,18 @@ export default function App() {
 
   // Sync and Modal States
   const [syncing, setSyncing] = useState(false);
+  const [savingEntry, setSavingEntry] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
-  const [theme, setTheme] = useState(localStorage.getItem('blip_theme') || 'dark');
+  const [theme, setTheme] = useState(localStorage.getItem('blip_theme') || 'light');
+
+  const refreshEntries = useCallback(async () => {
+    try {
+      const fetched = await db.getEntries();
+      setAllEntries(fetched);
+    } catch (e) {
+      console.error("Failed to load journal entries:", e);
+    }
+  }, []);
 
   // Load Theme
   useEffect(() => {
@@ -41,7 +51,6 @@ export default function App() {
 
   // Auth State Listener
   useEffect(() => {
-    setLoading(true);
     db.registerAuthListener(async (event, session) => {
       if (session?.user) {
         setUser(session.user);
@@ -57,22 +66,14 @@ export default function App() {
       await refreshEntries();
       setLoading(false);
     });
-  }, []);
+  }, [refreshEntries]);
 
   const toggleTheme = () => {
     setTheme(prev => prev === 'dark' ? 'light' : 'dark');
   };
 
-  const refreshEntries = async () => {
-    try {
-      const fetched = await db.getEntries();
-      setAllEntries(fetched);
-    } catch (e) {
-      console.error("Failed to load journal entries:", e);
-    }
-  };
-
   const handleSaveEntry = async (entryData) => {
+    setSavingEntry(true);
     try {
       await db.saveEntry(entryData);
       await refreshEntries();
@@ -82,10 +83,14 @@ export default function App() {
         particleCount: 100,
         spread: 70,
         origin: { y: 0.8 },
-        colors: ['#aa3bff', '#4dabf7', '#ff6b6b', '#fcc419']
+        colors: ['#6a8b6f', '#bb7a3b', '#b95f4a', '#d2a536']
       });
+      return true;
     } catch (err) {
       alert("Error saving journal entry: " + err.message);
+      return false;
+    } finally {
+      setSavingEntry(false);
     }
   };
 
@@ -218,7 +223,7 @@ export default function App() {
     return (
       <div style={styles.loadingScreen}>
         <Loader2 size={40} style={styles.spinner} color="var(--accent-color)" />
-        <span style={styles.loadingText}>Initializing Journal...</span>
+        <span style={styles.loadingText}>Opening journal...</span>
       </div>
     );
   }
@@ -273,7 +278,13 @@ export default function App() {
           // Standard Journal Board
           <div style={styles.journalFlow}>
             {/* Entry input composer */}
-            {!filterFavorites && <Composer onSave={handleSaveEntry} />}
+            {!filterFavorites && (
+              <Composer
+                onSave={handleSaveEntry}
+                isSaving={savingEntry}
+                isCloud={db.isCloudConfigured()}
+              />
+            )}
             
             {/* Journal Entries List */}
             <EntryList
@@ -334,6 +345,8 @@ const styles = {
     overflow: 'hidden',
     position: 'relative',
     backgroundColor: 'var(--bg-app)',
+    backgroundImage: 'linear-gradient(90deg, hsla(38, 26%, 24%, 0.035) 1px, transparent 1px), linear-gradient(hsla(38, 26%, 24%, 0.03) 1px, transparent 1px)',
+    backgroundSize: '34px 34px',
   },
   mainFeed: {
     flex: 1,
