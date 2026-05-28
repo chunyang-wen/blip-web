@@ -144,14 +144,8 @@ export default function EntryList({ entries, onUpdate, onDelete, onToggleFavorit
                   </div>
                 </div>
 
-                <textarea
-                  value={editText}
-                  onChange={(e) => setEditText(e.target.value)}
-                  style={styles.editTextarea}
-                  required
-                />
-
                 <div style={styles.editActions}>
+                  <span style={styles.editHint}>Use Cancel to exit editing without saving.</span>
                   <button onClick={handleCancelEdit} style={styles.cancelBtn} className="quiet-button">
                     <X size={14} />
                     <span>Cancel</span>
@@ -161,6 +155,14 @@ export default function EntryList({ entries, onUpdate, onDelete, onToggleFavorit
                     <span>Save Changes</span>
                   </button>
                 </div>
+
+                <textarea
+                  value={editText}
+                  onChange={(e) => setEditText(e.target.value)}
+                  style={styles.editTextarea}
+                  required
+                  autoFocus
+                />
               </div>
             ) : (
               // Standard Card View
@@ -257,7 +259,7 @@ const styles = {
     borderLeftWidth: '4px',
     borderLeftStyle: 'solid',
     transition: 'var(--transition-normal)',
-    overflow: 'hidden',
+    overflow: 'visible',
   },
   cardContent: {
     padding: '18px 20px 20px',
@@ -328,7 +330,8 @@ const styles = {
   },
   cardBody: {
     cursor: 'pointer',
-    padding: '2px 0',
+    padding: '2px 0 4px',
+    overflow: 'visible',
   },
   entryText: {
     fontSize: '17px',
@@ -370,12 +373,15 @@ const styles = {
     lineHeight: '1.5',
   },
   editLayout: {
-    padding: '18px 20px',
-    display: 'flex',
-    flexDirection: 'column',
+    padding: '18px 20px 20px',
+    display: 'grid',
+    gridTemplateColumns: '1fr',
+    gridTemplateAreas: '"title" "actions" "editor"',
     gap: '14px',
+    alignItems: 'center',
   },
   editHeader: {
+    gridArea: 'title',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'space-between',
@@ -403,23 +409,37 @@ const styles = {
     transition: 'var(--transition-normal)',
   },
   editTextarea: {
+    gridArea: 'editor',
     width: '100%',
-    minHeight: '100px',
-    padding: '12px',
+    minHeight: '180px',
+    maxHeight: '52vh',
+    padding: '14px 16px',
     borderRadius: '8px',
     border: '1px solid var(--border-color)',
     backgroundColor: 'var(--bg-card)',
     color: 'var(--text-main)',
-    fontSize: '16px',
-    lineHeight: '1.6',
+    fontSize: '17px',
+    lineHeight: '1.64',
     outline: 'none',
     resize: 'vertical',
     fontFamily: 'var(--font-journal)',
   },
   editActions: {
+    gridArea: 'actions',
     display: 'flex',
     justifyContent: 'flex-end',
+    alignItems: 'center',
     gap: '10px',
+    padding: '10px 12px',
+    borderRadius: '8px',
+    backgroundColor: 'hsla(var(--mood-question), 0.07)',
+    border: '1px solid var(--border-color)',
+  },
+  editHint: {
+    marginRight: 'auto',
+    color: 'var(--text-muted)',
+    fontSize: '12.5px',
+    fontWeight: '600',
   },
   cancelBtn: {
     display: 'flex',
