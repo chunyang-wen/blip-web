@@ -50,6 +50,7 @@ export default function Sidebar({
                 onClick={() => {
                   setSelectedInterval(item.id);
                   setShowInsights(false);
+                  setFilterFavorites(false);
                 }}
                 style={{
                   ...styles.navItem,
