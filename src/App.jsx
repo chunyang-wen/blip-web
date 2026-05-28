@@ -53,6 +53,7 @@ export default function App() {
   useEffect(() => {
     db.registerAuthListener(async (event, session) => {
       if (session?.user) {
+        setLoading(true);
         setUser(session.user);
         setIsAuthenticated(true);
         localStorage.setItem('blip_bypass_auth', 'false');
@@ -218,12 +219,20 @@ export default function App() {
 
   const activeEntries = getFilteredEntries();
 
+  // Dynamic Loading Message
+  const getLoadingText = () => {
+    if (db.isCloudConfigured() && isAuthenticated) {
+      return "Syncing your journal from Supabase...";
+    }
+    return "Opening journal...";
+  };
+
   // Loading Screen
   if (loading) {
     return (
       <div style={styles.loadingScreen}>
         <Loader2 size={40} style={styles.spinner} color="var(--accent-color)" />
-        <span style={styles.loadingText}>Opening journal...</span>
+        <span style={styles.loadingText}>{getLoadingText()}</span>
       </div>
     );
   }
@@ -234,7 +243,7 @@ export default function App() {
   if (showAuth) {
     return (
       <Login 
-        onAuthSuccess={refreshEntries} 
+        onAuthSuccess={() => {}} 
         onBypassAuth={handleBypassAuth} 
       />
     );
